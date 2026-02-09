@@ -54,6 +54,7 @@ func main() {
 	if len(matched) == 0 {
 		msg := "No matching tournaments found."
 		fmt.Println(msg)
+		notify(bot, msg)
 		return
 	}
 
