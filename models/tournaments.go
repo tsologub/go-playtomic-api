@@ -6,6 +6,7 @@ import (
 )
 
 type Tournament struct {
+	TournamentID    string `json:"tournament_id"`
 	Name            string `json:"name"`
 	Visibility      string `json:"visibility"`
 	AvailablePlaces int    `json:"available_places"`

@@ -1,0 +1,10 @@
+tournaments:
+  - tenant_id: "8b818dae-aacb-4ea3-aa7b-0e77b1149c85"
+    visibility: "PUBLIC"
+    registration_status: "OPEN"
+    status: "PENDING"
+    min_available_places: 1
+    blacklist:
+      - "ladies"
+      - "femenino"
+      - "women"
