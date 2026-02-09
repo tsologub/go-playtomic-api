@@ -1,6 +1,9 @@
 name: Check Tournaments
 
 on:
+  schedule:
+    # Run every 10 minutes
+    - cron: '*/10 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -17,4 +20,4 @@ jobs:
           go-version: '1.24'
 
       - name: Run playtomic-watch
-        run: go run ./cmd/playtomic-watch --config config.example.yaml
+        run: go run ./cmd/playtomic-watch --config configs/t-config.yaml
