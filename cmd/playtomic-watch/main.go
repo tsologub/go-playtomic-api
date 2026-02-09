@@ -25,7 +25,7 @@ func main() {
 
 	c := client.NewClient(
 		client.WithTimeout(*timeout),
-		client.WithBaseURL(client.DefaultBaseUrlV1),
+		client.WithBaseURL(client.DefaultBaseUrlV2),
 	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
