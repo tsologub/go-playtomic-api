@@ -17,92 +17,22 @@ func main() {
 	c := client.NewClient(
 		client.WithTimeout(15*time.Second),
 		client.WithRetries(2),
+		client.WithBaseURL(client.DefaultBaseUrlV2),
 	)
 
 	// Create a context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	// Search for classes
-	fmt.Println("Searching for classes...")
-	classes, err := searchClasses(ctx, c)
+	// Search for Tournaments
+	fmt.Println("Searching for tournaments...")
+	tournaments, err := searchTournaments(ctx, c)
+
+	if len(tournaments) > 0 {
+		fmt.Println("Found tournaments")
+	}
 	if err != nil {
-		log.Fatalf("Error searching classes: %v", err)
-	}
-
-	// Display classes
-	fmt.Printf("Found %d classes\n", len(classes))
-	for i, class := range classes {
-		if i >= 3 {
-			fmt.Println("...")
-			break
-		}
-
-		fmt.Printf("- %s at %s (%s to %s)\n",
-			getClassTitle(class),
-			class.Tenant.TenantName,
-			class.StartDate,
-			class.EndDate)
-	}
-
-	fmt.Println()
-
-	// Search for matches
-	fmt.Println("Searching for matches...")
-	matches, err := searchMatches(ctx, c)
-	if err != nil {
-		log.Fatalf("Error searching matches: %v", err)
-	}
-
-	// Display matches
-	fmt.Printf("Found %d matches\n", len(matches))
-	for i, match := range matches {
-		if i >= 3 {
-			fmt.Println("...")
-			break
-		}
-
-		fmt.Printf("- %s match at %s (%s): %d of %d players\n",
-			match.MatchType,
-			match.Tenant.TenantName,
-			match.StartDate,
-			countPlayers(match),
-			totalPlayerSlots(match))
-	}
-
-	fmt.Println()
-
-	// Search for lessons
-	fmt.Println("Searching for lessons...")
-	lessons, err := searchLessons(ctx, c)
-	if err != nil {
-		log.Fatalf("Error searching lessons: %v", err)
-	}
-
-	// Display lessons
-	fmt.Printf("Found %d lessons\n", len(lessons))
-	for i, lesson := range lessons {
-		if i >= 3 {
-			fmt.Println("...")
-			break
-		}
-
-		fmt.Printf("- %s at %s (%s): %d of %d players, %d available spots\n",
-			lesson.TournamentName,
-			lesson.Tenant.TenantName,
-			lesson.StartDate,
-			len(lesson.RegisteredPlayers),
-			lesson.MaxPlayers,
-			lesson.AvailablePlaces)
-
-		// Demonstrate model conversion if there are players
-		if len(lesson.RegisteredPlayers) > 0 {
-			// Convert lesson player to standard player
-			lessonPlayer := &lesson.RegisteredPlayers[0]
-			player := models.LessonPlayerToPlayer(lessonPlayer)
-
-			fmt.Printf("  Player: %s (converted from LessonPlayer)\n", player.Name)
-		}
+		log.Fatalf("Error searching tournaments: %v", err)
 	}
 }
 
@@ -127,6 +57,18 @@ func searchClasses(ctx context.Context, c *client.Client) ([]models.Class, error
 	}
 
 	return c.GetClasses(ctx, classParams)
+}
+
+func searchTournaments(ctx context.Context, c *client.Client) ([]models.Tournament, error) {
+	tournamentParams := &models.SearchTournamentsParams{
+		AvailablePlaces:    true,
+		RegistrationStatus: "OPEN",
+		Status:             "PENDING",
+		TenantID:           "8b818dae-aacb-4ea3-aa7b-0e77b1149c85",
+		Visibility:         "PUBLIC",
+	}
+
+	return c.GetTournaments(ctx, tournamentParams)
 }
 
 // searchMatches demonstrates searching for matches

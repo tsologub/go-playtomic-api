@@ -7,8 +7,9 @@ import (
 )
 
 const (
-	// DefaultBaseURL is the default Playtomic API endpoint
-	DefaultBaseURL = "https://api.playtomic.io/v1"
+	// DefaultBaseUrlV1 is the default Playtomic API endpoint
+	DefaultBaseUrlV1 = "https://api.playtomic.io/v1"
+	DefaultBaseUrlV2 = "https://api.playtomic.io/v2"
 
 	// DefaultTimeout is the default client timeout
 	DefaultTimeout = 30 * time.Second
@@ -35,7 +36,7 @@ func NewClient(opts ...Option) *Client {
 		httpClient: &http.Client{
 			Timeout: DefaultTimeout,
 		},
-		baseURL:    DefaultBaseURL,
+		baseURL:    DefaultBaseUrlV1,
 		userAgent:  DefaultUserAgent,
 		maxRetries: DefaultMaxRetries,
 	}
