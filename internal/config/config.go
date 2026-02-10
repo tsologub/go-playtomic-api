@@ -18,6 +18,7 @@ type TournamentFilter struct {
 	Status             string   `yaml:"status"`
 	MinAvailablePlaces int      `yaml:"min_available_places"`
 	Blacklist          []string `yaml:"blacklist"`
+	PlayerName         string   `yaml:"player_name"`
 }
 
 func Load(path string) (*Config, error) {

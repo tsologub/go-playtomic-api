@@ -6,11 +6,22 @@ import (
 )
 
 type Tournament struct {
-	TournamentID    string `json:"tournament_id"`
-	Name            string `json:"name"`
-	Visibility      string `json:"visibility"`
-	AvailablePlaces int    `json:"available_places"`
-	Status          string `json:"status"`
+	TournamentID    string           `json:"tournament_id"`
+	Name            string           `json:"name"`
+	Visibility      string           `json:"visibility"`
+	AvailablePlaces int              `json:"available_places"`
+	Status          string           `json:"status"`
+	Teams           []TournamentTeam `json:"teams"`
+}
+
+type TournamentTeam struct {
+	TeamID  string             `json:"team_id"`
+	Players []TournamentPlayer `json:"players"`
+}
+
+type TournamentPlayer struct {
+	Name   string `json:"name"`
+	UserID string `json:"user_id"`
 }
 
 type SearchTournamentsParams struct {

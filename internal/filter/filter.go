@@ -27,7 +27,23 @@ func match(t models.Tournament, f config.TournamentFilter) bool {
 		return false
 	}
 
+	if f.PlayerName != "" && hasPlayer(t, f.PlayerName) {
+		return false
+	}
+
 	return true
+}
+
+func hasPlayer(t models.Tournament, name string) bool {
+	lower := strings.ToLower(name)
+	for _, team := range t.Teams {
+		for _, p := range team.Players {
+			if strings.ToLower(p.Name) == lower {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 func isBlacklisted(name string, blacklist []string) bool {
