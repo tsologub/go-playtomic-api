@@ -99,6 +99,81 @@ func TestApply_EmptyInput(t *testing.T) {
 	}
 }
 
+func TestApply_PlayerNameSkipsRegistered(t *testing.T) {
+	tournaments := []models.Tournament{
+		{
+			TournamentID: "1", Name: "Open Padel", AvailablePlaces: 3,
+			Teams: []models.TournamentTeam{
+				{Players: []models.TournamentPlayer{{Name: "Taras S."}}},
+				{Players: []models.TournamentPlayer{{Name: "John D."}}},
+			},
+		},
+		{
+			TournamentID: "2", Name: "Summer Cup", AvailablePlaces: 2,
+			Teams: []models.TournamentTeam{
+				{Players: []models.TournamentPlayer{{Name: "Alice B."}}},
+			},
+		},
+	}
+
+	f := config.TournamentFilter{
+		TenantID:   "t1",
+		PlayerName: "Taras S.",
+	}
+
+	result := Apply(tournaments, f)
+
+	if len(result) != 1 {
+		t.Fatalf("expected 1 tournament, got %d", len(result))
+	}
+	if result[0].TournamentID != "2" {
+		t.Errorf("expected result ID '2', got %q", result[0].TournamentID)
+	}
+}
+
+func TestApply_PlayerNameCaseInsensitive(t *testing.T) {
+	tournaments := []models.Tournament{
+		{
+			TournamentID: "1", Name: "Open Padel", AvailablePlaces: 3,
+			Teams: []models.TournamentTeam{
+				{Players: []models.TournamentPlayer{{Name: "taras s."}}},
+			},
+		},
+	}
+
+	f := config.TournamentFilter{
+		TenantID:   "t1",
+		PlayerName: "Taras S.",
+	}
+
+	result := Apply(tournaments, f)
+
+	if len(result) != 0 {
+		t.Fatalf("expected 0 tournaments, got %d", len(result))
+	}
+}
+
+func TestApply_PlayerNameEmpty(t *testing.T) {
+	tournaments := []models.Tournament{
+		{
+			TournamentID: "1", Name: "Open Padel", AvailablePlaces: 3,
+			Teams: []models.TournamentTeam{
+				{Players: []models.TournamentPlayer{{Name: "Taras S."}}},
+			},
+		},
+	}
+
+	f := config.TournamentFilter{
+		TenantID: "t1",
+	}
+
+	result := Apply(tournaments, f)
+
+	if len(result) != 1 {
+		t.Fatalf("expected 1 tournament, got %d", len(result))
+	}
+}
+
 func TestApply_CombinedFilters(t *testing.T) {
 	tournaments := []models.Tournament{
 		{TournamentID: "1", Name: "Open Padel", AvailablePlaces: 3},

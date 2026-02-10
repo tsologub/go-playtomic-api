@@ -4,6 +4,7 @@ tournaments:
     registration_status: "OPEN"
     status: "PENDING"
     min_available_places: 1
+    player_name: "Taras S."
     blacklist:
       - "ladies"
       - "beginner"
