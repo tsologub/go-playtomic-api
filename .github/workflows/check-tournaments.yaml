@@ -19,7 +19,7 @@ jobs:
         with:
           go-version: '1.24'
 
-      - name: Run playtomic-watch
+      - name: Run playtomic-watch T
         run: >
           go run ./cmd/playtomic-watch
           --config configs/t-config.yaml
@@ -28,3 +28,12 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      - name: Run playtomic-watch K
+        run: >
+          go run ./cmd/playtomic-watch
+          --config configs/k-config.yaml
+          --telegram-token "$TELEGRAM_BOT_TOKEN"
+          --telegram-chat-id 844005776
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
