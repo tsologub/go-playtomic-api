@@ -8,3 +8,4 @@ tournaments:
     blacklist:
       - "ladies"
       - "beginner"
+      - "advanced"
