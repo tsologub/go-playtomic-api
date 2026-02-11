@@ -6,4 +6,4 @@ tournaments:
     min_available_places: 1
     player_name: "Karina P"
     blacklist:
-      - "7AM"
+      - "testing"
