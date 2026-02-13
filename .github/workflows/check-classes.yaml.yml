@@ -21,10 +21,11 @@ jobs:
 
       - name: Run playtomic-watch T
         run: >
-          go run ./cmd/playtomic-watch classes
+          go run ./cmd/playtomic-watch
           -config configs/t-classes-config.yaml
           -telegram-token "$TELEGRAM_BOT_TOKEN"
           -telegram-chat-id "$TELEGRAM_CHAT_ID"
+          classes
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
