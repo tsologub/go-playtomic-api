@@ -7,3 +7,5 @@ tournaments:
     player_name: "Karina P"
     blacklist:
       - "7AM"
+      - "Community Matching"
+      - "Morning Americano"
