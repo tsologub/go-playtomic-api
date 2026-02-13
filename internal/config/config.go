@@ -23,15 +23,15 @@ type TournamentFilter struct {
 }
 
 type ClassFilter struct {
-	TenantID         string   `yaml:"tenant_id"`
-	CourseVisibility string   `yaml:"course_visibility"`
+	TenantID          string   `yaml:"tenant_id"`
+	CourseVisibility  string   `yaml:"course_visibility"`
 	ShowOnlyAvailable bool     `yaml:"show_only_available"`
-	Status           string   `yaml:"status"`
-	Type             string   `yaml:"type"`
-	CoachName        string   `yaml:"coach_name"`
-	PlayerName       string   `yaml:"player_name"`
-	CourseNames      []string `yaml:"course_names"`
-	Blacklist        []string `yaml:"blacklist"`
+	Status            string   `yaml:"status"`
+	Type              string   `yaml:"type"`
+	CoachNames        []string `yaml:"coach_names"`
+	PlayerName        string   `yaml:"player_name"`
+	CourseNames       []string `yaml:"course_names"`
+	Blacklist         []string `yaml:"blacklist"`
 }
 
 func Load(path string) (*Config, error) {

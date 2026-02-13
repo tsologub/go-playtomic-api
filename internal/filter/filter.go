@@ -20,7 +20,7 @@ func ApplyClasses(classes []models.Class, f config.ClassFilter) []models.Class {
 
 func matchClass(c models.Class, f config.ClassFilter) bool {
 	// Filter by coach name
-	if f.CoachName != "" && !hasCoach(c, f.CoachName) {
+	if len(f.CoachNames) > 0 && !hasAnyCoach(c, f.CoachNames) {
 		return false
 	}
 
@@ -44,11 +44,14 @@ func matchClass(c models.Class, f config.ClassFilter) bool {
 	return true
 }
 
-func hasCoach(c models.Class, name string) bool {
-	lower := strings.ToLower(name)
-	for _, coach := range c.Coaches {
-		if strings.Contains(strings.ToLower(coach.Name), lower) {
-			return true
+func hasAnyCoach(c models.Class, names []string) bool {
+	for _, name := range names {
+		lower := strings.ToLower(name)
+
+		for _, coach := range c.Coaches {
+			if strings.Contains(strings.ToLower(coach.Name), lower) {
+				return true
+			}
 		}
 	}
 	return false
