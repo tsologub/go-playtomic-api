@@ -1,0 +1,11 @@
+classes:
+  - tenant_id: "8b818dae-aacb-4ea3-aa7b-0e77b1149c85"
+    course_visibility: "PUBLIC"
+    show_only_available: true
+    status: "PENDING,IN_PROGRESS"
+    type: "COURSE,PUBLIC"
+    coach_name: "Deniz"
+    player_name: "Taras S."
+    course_names:
+      - "intensivkurs"
+      - "elementary"

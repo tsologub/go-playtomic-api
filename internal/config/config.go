@@ -9,6 +9,7 @@ import (
 
 type Config struct {
 	Tournaments []TournamentFilter `yaml:"tournaments"`
+	Classes     []ClassFilter      `yaml:"classes"`
 }
 
 type TournamentFilter struct {
@@ -19,6 +20,18 @@ type TournamentFilter struct {
 	MinAvailablePlaces int      `yaml:"min_available_places"`
 	Blacklist          []string `yaml:"blacklist"`
 	PlayerName         string   `yaml:"player_name"`
+}
+
+type ClassFilter struct {
+	TenantID         string   `yaml:"tenant_id"`
+	CourseVisibility string   `yaml:"course_visibility"`
+	ShowOnlyAvailable bool     `yaml:"show_only_available"`
+	Status           string   `yaml:"status"`
+	Type             string   `yaml:"type"`
+	CoachName        string   `yaml:"coach_name"`
+	PlayerName       string   `yaml:"player_name"`
+	CourseNames      []string `yaml:"course_names"`
+	Blacklist        []string `yaml:"blacklist"`
 }
 
 func Load(path string) (*Config, error) {
@@ -40,13 +53,19 @@ func Load(path string) (*Config, error) {
 }
 
 func (c *Config) validate() error {
-	if len(c.Tournaments) == 0 {
-		return fmt.Errorf("at least one tournament filter is required")
+	if len(c.Tournaments) == 0 && len(c.Classes) == 0 {
+		return fmt.Errorf("at least one tournament or class filter is required")
 	}
 
 	for i, t := range c.Tournaments {
 		if t.TenantID == "" {
 			return fmt.Errorf("tournaments[%d]: tenant_id is required", i)
+		}
+	}
+
+	for i, cl := range c.Classes {
+		if cl.TenantID == "" {
+			return fmt.Errorf("classes[%d]: tenant_id is required", i)
 		}
 	}
 

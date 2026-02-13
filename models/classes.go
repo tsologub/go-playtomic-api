@@ -39,17 +39,18 @@ type CourseSummary struct {
 
 // SearchClassesParams defines parameters for searching classes
 type SearchClassesParams struct {
-	Sort             string
-	Status           string
-	Type             string
-	TenantIDs        []string
-	IncludeSummary   bool
-	Size             int
-	Page             int
-	CourseVisibility string
-	FromStartDate    string
-	Coordinate       *Coordinate
-	Radius           int
+	Sort              string
+	Status            string
+	Type              string
+	TenantIDs         []string
+	IncludeSummary    bool
+	Size              int
+	Page              int
+	CourseVisibility  string
+	ShowOnlyAvailable bool
+	FromStartDate     string
+	Coordinate        *Coordinate
+	Radius            int
 }
 
 // ToURLValues converts SearchClassesParams to url.Values
@@ -84,6 +85,10 @@ func (p *SearchClassesParams) ToURLValues() url.Values {
 
 	if cv := strings.TrimSpace(p.CourseVisibility); cv != "" {
 		values.Set("course_visibility", cv)
+	}
+
+	if p.ShowOnlyAvailable {
+		values.Set("show_only_available", "true")
 	}
 
 	if p.FromStartDate != "" {
