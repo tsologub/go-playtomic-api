@@ -1,4 +1,4 @@
-name: Check Tournaments
+name: Check Classes
 
 on:
   schedule:
@@ -21,19 +21,10 @@ jobs:
 
       - name: Run playtomic-watch T
         run: >
-          go run ./cmd/playtomic-watch tournaments
-          -config configs/t-tournaments-config.yaml
+          go run ./cmd/playtomic-watch classes
+          -config configs/t-classes-config.yaml
           -telegram-token "$TELEGRAM_BOT_TOKEN"
           -telegram-chat-id "$TELEGRAM_CHAT_ID"
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-
-      - name: Run playtomic-watch K
-        run: >
-          go run ./cmd/playtomic-watch tournaments
-          -config configs/k-tournaments-config.yaml
-          -telegram-token "$TELEGRAM_BOT_TOKEN"
-          -telegram-chat-id 844005776
-        env:
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

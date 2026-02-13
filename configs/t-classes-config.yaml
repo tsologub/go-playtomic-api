@@ -4,11 +4,8 @@ classes:
     show_only_available: true
     status: "PENDING,IN_PROGRESS"
     type: "COURSE,PUBLIC"
-    coach_name: "Deniz Gürsoy"
-    player_name: "Your Name Here"
+    coach_name: "Deniz"
+    player_name: "Taras S."
     course_names:
       - "intensivkurs"
       - "elementary"
-    blacklist:
-      - "beginner"
-      - "advanced"
