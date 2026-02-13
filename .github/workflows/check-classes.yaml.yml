@@ -29,3 +29,13 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      - name: Run playtomic-watch K
+        run: >
+          go run ./cmd/playtomic-watch
+          -config configs/k-classes-config.yaml
+          -telegram-token "$TELEGRAM_BOT_TOKEN"
+          -telegram-chat-id 844005776
+          classes
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
