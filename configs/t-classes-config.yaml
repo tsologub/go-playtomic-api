@@ -4,8 +4,8 @@ classes:
     show_only_available: true
     status: "PENDING,IN_PROGRESS"
     type: "COURSE,PUBLIC"
-    coach_name: "Deniz"
+    coach_name: "Gustavo"
     player_name: "Taras S."
     course_names:
-      - "intensivkurs"
-      - "elementary"
+      - "intensivkurs 3"
+      - "intensivkurs 4"
