@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  check-tournaments:
+  check-classes:
     runs-on: ubuntu-latest
 
     steps:
