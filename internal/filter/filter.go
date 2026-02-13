@@ -7,6 +7,73 @@ import (
 	"github.com/rafa-garcia/go-playtomic-api/models"
 )
 
+// ApplyClasses returns the subset of classes that match the given filter criteria.
+func ApplyClasses(classes []models.Class, f config.ClassFilter) []models.Class {
+	var result []models.Class
+	for _, c := range classes {
+		if matchClass(c, f) {
+			result = append(result, c)
+		}
+	}
+	return result
+}
+
+func matchClass(c models.Class, f config.ClassFilter) bool {
+	// Filter by coach name
+	if f.CoachName != "" && !hasCoach(c, f.CoachName) {
+		return false
+	}
+
+	// Filter out if player is already registered
+	if f.PlayerName != "" && isRegistered(c, f.PlayerName) {
+		return false
+	}
+
+	// Filter by course name (whitelist)
+	if len(f.CourseNames) > 0 && c.CourseSummary != nil {
+		if !isInCourseNames(c.CourseSummary.Name, f.CourseNames) {
+			return false
+		}
+	}
+
+	// Filter by blacklist
+	if c.CourseSummary != nil && isBlacklisted(c.CourseSummary.Name, f.Blacklist) {
+		return false
+	}
+
+	return true
+}
+
+func hasCoach(c models.Class, name string) bool {
+	lower := strings.ToLower(name)
+	for _, coach := range c.Coaches {
+		if strings.Contains(strings.ToLower(coach.Name), lower) {
+			return true
+		}
+	}
+	return false
+}
+
+func isRegistered(c models.Class, name string) bool {
+	lower := strings.ToLower(name)
+	for _, reg := range c.RegistrationInfo.Registrations {
+		if strings.Contains(strings.ToLower(reg.Player.Name), lower) {
+			return true
+		}
+	}
+	return false
+}
+
+func isInCourseNames(courseName string, courseNames []string) bool {
+	lower := strings.ToLower(courseName)
+	for _, cn := range courseNames {
+		if strings.Contains(lower, strings.ToLower(cn)) {
+			return true
+		}
+	}
+	return false
+}
+
 // Apply returns the subset of tournaments that match the given filter criteria.
 func Apply(tournaments []models.Tournament, f config.TournamentFilter) []models.Tournament {
 	var result []models.Tournament

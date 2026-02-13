@@ -32,36 +32,72 @@ func main() {
 		bot = telegram.NewBot(*telegramToken, *telegramChatID)
 	}
 
-	c := client.NewClient(
+	// Create client for v2 API (tournaments)
+	v2Client := client.NewClient(
 		client.WithTimeout(*timeout),
 		client.WithBaseURL(client.DefaultBaseUrlV2),
+	)
+
+	// Create client for v1 API (classes)
+	v1Client := client.NewClient(
+		client.WithTimeout(*timeout),
+		client.WithBaseURL(client.DefaultBaseUrlV1),
 	)
 
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
-	var matched []models.Tournament
+	var matchedTournaments []models.Tournament
 	for _, tf := range cfg.Tournaments {
-		tournaments, err := fetchTournaments(ctx, c, tf)
+		tournaments, err := fetchTournaments(ctx, v2Client, tf)
 		if err != nil {
 			log.Printf("Error fetching tournaments for tenant %s: %v", tf.TenantID, err)
 			continue
 		}
 
-		matched = append(matched, filter.Apply(tournaments, tf)...)
+		matchedTournaments = append(matchedTournaments, filter.Apply(tournaments, tf)...)
 	}
 
-	if len(matched) == 0 {
-		msg := "No matching tournaments found."
+	var matchedClasses []models.Class
+	for _, cf := range cfg.Classes {
+		classes, err := fetchClasses(ctx, v1Client, cf)
+		if err != nil {
+			log.Printf("Error fetching classes for tenant %s: %v", cf.TenantID, err)
+			continue
+		}
+
+		matchedClasses = append(matchedClasses, filter.ApplyClasses(classes, cf)...)
+	}
+
+	if len(matchedTournaments) == 0 && len(matchedClasses) == 0 {
+		msg := "No matching tournaments or classes found."
 		fmt.Println(msg)
 		return
 	}
 
 	var sb strings.Builder
-	for _, t := range matched {
-		printTournament(t)
-		formatTournament(&sb, t)
+
+	if len(matchedTournaments) > 0 {
+		sb.WriteString("🏆 TOURNAMENTS\n")
+		sb.WriteString("==============\n\n")
+		for _, t := range matchedTournaments {
+			printTournament(t)
+			formatTournament(&sb, t)
+		}
 	}
+
+	if len(matchedClasses) > 0 {
+		if len(matchedTournaments) > 0 {
+			sb.WriteString("\n")
+		}
+		sb.WriteString("🎓 CLASSES\n")
+		sb.WriteString("==========\n\n")
+		for _, c := range matchedClasses {
+			printClass(c)
+			formatClass(&sb, c)
+		}
+	}
+
 	notify(bot, sb.String())
 }
 
@@ -86,6 +122,27 @@ func fetchTournaments(ctx context.Context, c *client.Client, tf config.Tournamen
 	return c.GetTournaments(ctx, params)
 }
 
+func fetchClasses(ctx context.Context, c *client.Client, cf config.ClassFilter) ([]models.Class, error) {
+	params := &models.SearchClassesParams{
+		TenantIDs: []string{cf.TenantID},
+	}
+
+	if cf.CourseVisibility != "" {
+		params.CourseVisibility = cf.CourseVisibility
+	}
+	if cf.ShowOnlyAvailable {
+		params.ShowOnlyAvailable = true
+	}
+	if cf.Status != "" {
+		params.Status = cf.Status
+	}
+	if cf.Type != "" {
+		params.Type = cf.Type
+	}
+
+	return c.GetClasses(ctx, params)
+}
+
 func notify(bot *telegram.Bot, msg string) {
 	if bot == nil {
 		return
@@ -108,5 +165,45 @@ func formatTournament(sb *strings.Builder, t models.Tournament) {
 	fmt.Fprintf(sb, "🏆 %s\n", t.Name)
 	fmt.Fprintf(sb, "  Status: %s\n", t.Status)
 	fmt.Fprintf(sb, "  Places: %d\n", t.AvailablePlaces)
+	sb.WriteString("\n")
+}
+
+func printClass(c models.Class) {
+	fmt.Printf("--- Class ---\n")
+	fmt.Printf("  ID:          %s\n", c.AcademyClassID)
+	if c.CourseSummary != nil {
+		fmt.Printf("  Course:      %s\n", c.CourseSummary.Name)
+	}
+	fmt.Printf("  Type:        %s\n", c.Type)
+	fmt.Printf("  Status:      %s\n", c.Status)
+	fmt.Printf("  Start:       %s\n", c.StartDate)
+	fmt.Printf("  End:         %s\n", c.EndDate)
+	if len(c.Coaches) > 0 {
+		fmt.Printf("  Coaches:     ")
+		for i, coach := range c.Coaches {
+			if i > 0 {
+				fmt.Printf(", ")
+			}
+			fmt.Printf("%s", coach.Name)
+		}
+		fmt.Println()
+	}
+	fmt.Printf("  Registrations: %d\n", len(c.RegistrationInfo.Registrations))
+	fmt.Println()
+}
+
+func formatClass(sb *strings.Builder, c models.Class) {
+	if c.CourseSummary != nil {
+		fmt.Fprintf(sb, "🎓 %s\n", c.CourseSummary.Name)
+	} else {
+		fmt.Fprintf(sb, "🎓 Class\n")
+	}
+	fmt.Fprintf(sb, "  Type: %s\n", c.Type)
+	fmt.Fprintf(sb, "  Status: %s\n", c.Status)
+	fmt.Fprintf(sb, "  Start: %s\n", c.StartDate)
+	if len(c.Coaches) > 0 {
+		fmt.Fprintf(sb, "  Coach: %s\n", c.Coaches[0].Name)
+	}
+	fmt.Fprintf(sb, "  Registrations: %d\n", len(c.RegistrationInfo.Registrations))
 	sb.WriteString("\n")
 }
