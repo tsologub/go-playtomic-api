@@ -12,5 +12,5 @@ classes:
     course_names:
       - "intensivkurs 2"
       - "intensivkurs 1"
-      - "public training: beginner"
-      - "public training: elementary"
+      - "beginner"
+      - "elementary"
