@@ -22,6 +22,19 @@ func main() {
 	telegramChatID := flag.String("telegram-chat-id", "", "Telegram chat ID")
 	flag.Parse()
 
+	// Check for subcommand
+	args := flag.Args()
+	if len(args) == 0 {
+		printUsage()
+		log.Fatalf("Error: subcommand required")
+	}
+
+	subcommand := args[0]
+	if subcommand != "tournaments" && subcommand != "classes" {
+		printUsage()
+		log.Fatalf("Error: invalid subcommand '%s'", subcommand)
+	}
+
 	cfg, err := config.Load(*configPath)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
@@ -32,73 +45,89 @@ func main() {
 		bot = telegram.NewBot(*telegramToken, *telegramChatID)
 	}
 
-	// Create client for v2 API (tournaments)
-	v2Client := client.NewClient(
-		client.WithTimeout(*timeout),
-		client.WithBaseURL(client.DefaultBaseUrlV2),
-	)
-
-	// Create client for v1 API (classes)
-	v1Client := client.NewClient(
-		client.WithTimeout(*timeout),
-		client.WithBaseURL(client.DefaultBaseUrlV1),
-	)
-
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
-	var matchedTournaments []models.Tournament
-	for _, tf := range cfg.Tournaments {
-		tournaments, err := fetchTournaments(ctx, v2Client, tf)
-		if err != nil {
-			log.Printf("Error fetching tournaments for tenant %s: %v", tf.TenantID, err)
-			continue
-		}
-
-		matchedTournaments = append(matchedTournaments, filter.Apply(tournaments, tf)...)
-	}
-
-	var matchedClasses []models.Class
-	for _, cf := range cfg.Classes {
-		classes, err := fetchClasses(ctx, v1Client, cf)
-		if err != nil {
-			log.Printf("Error fetching classes for tenant %s: %v", cf.TenantID, err)
-			continue
-		}
-
-		matchedClasses = append(matchedClasses, filter.ApplyClasses(classes, cf)...)
-	}
-
-	if len(matchedTournaments) == 0 && len(matchedClasses) == 0 {
-		msg := "No matching tournaments or classes found."
-		fmt.Println(msg)
-		return
-	}
-
 	var sb strings.Builder
 
-	if len(matchedTournaments) > 0 {
-		sb.WriteString("🏆 TOURNAMENTS\n")
-		sb.WriteString("==============\n\n")
+	switch subcommand {
+	case "tournaments":
+		if len(cfg.Tournaments) == 0 {
+			log.Fatalf("No tournament filters configured in %s", *configPath)
+		}
+
+		// Create client for v2 API (tournaments)
+		v2Client := client.NewClient(
+			client.WithTimeout(*timeout),
+			client.WithBaseURL(client.DefaultBaseUrlV2),
+		)
+
+		var matchedTournaments []models.Tournament
+		for _, tf := range cfg.Tournaments {
+			tournaments, err := fetchTournaments(ctx, v2Client, tf)
+			if err != nil {
+				log.Printf("Error fetching tournaments for tenant %s: %v", tf.TenantID, err)
+				continue
+			}
+
+			matchedTournaments = append(matchedTournaments, filter.Apply(tournaments, tf)...)
+		}
+
+		if len(matchedTournaments) == 0 {
+			fmt.Println("No matching tournaments found.")
+			return
+		}
+
 		for _, t := range matchedTournaments {
 			printTournament(t)
 			formatTournament(&sb, t)
 		}
-	}
 
-	if len(matchedClasses) > 0 {
-		if len(matchedTournaments) > 0 {
-			sb.WriteString("\n")
+	case "classes":
+		if len(cfg.Classes) == 0 {
+			log.Fatalf("No class filters configured in %s", *configPath)
 		}
-		sb.WriteString("🎓 CLASSES\n")
-		sb.WriteString("==========\n\n")
+
+		// Create client for v1 API (classes)
+		v1Client := client.NewClient(
+			client.WithTimeout(*timeout),
+			client.WithBaseURL(client.DefaultBaseUrlV1),
+		)
+
+		var matchedClasses []models.Class
+		for _, cf := range cfg.Classes {
+			classes, err := fetchClasses(ctx, v1Client, cf)
+			if err != nil {
+				log.Printf("Error fetching classes for tenant %s: %v", cf.TenantID, err)
+				continue
+			}
+
+			matchedClasses = append(matchedClasses, filter.ApplyClasses(classes, cf)...)
+		}
+
+		if len(matchedClasses) == 0 {
+			fmt.Println("No matching classes found.")
+			return
+		}
+
 		for _, c := range matchedClasses {
 			printClass(c)
 			formatClass(&sb, c)
 		}
 	}
 
-	notify(bot, sb.String())
+	if sb.Len() > 0 {
+		notify(bot, sb.String())
+	}
+}
+
+func printUsage() {
+	fmt.Println("Usage: playtomic-watch [OPTIONS] <tournaments|classes>")
+	fmt.Println("\nSubcommands:")
+	fmt.Println("  tournaments    Search for tournaments")
+	fmt.Println("  classes        Search for classes")
+	fmt.Println("\nOptions:")
+	flag.PrintDefaults()
 }
 
 func fetchTournaments(ctx context.Context, c *client.Client, tf config.TournamentFilter) ([]models.Tournament, error) {
