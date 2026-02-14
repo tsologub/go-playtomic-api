@@ -2,8 +2,8 @@ name: Check Tournaments
 
 on:
   schedule:
-    # Run every 10 minutes
-    - cron: '*/10 * * * *'
+    # Run every 60 minutes
+    - cron: '*/59 * * * *'
   workflow_dispatch:
 
 jobs:
