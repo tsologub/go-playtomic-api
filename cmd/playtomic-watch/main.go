@@ -11,6 +11,7 @@ import (
 	"github.com/rafa-garcia/go-playtomic-api/client"
 	"github.com/rafa-garcia/go-playtomic-api/internal/config"
 	"github.com/rafa-garcia/go-playtomic-api/internal/filter"
+	"github.com/rafa-garcia/go-playtomic-api/internal/state"
 	"github.com/rafa-garcia/go-playtomic-api/internal/telegram"
 	"github.com/rafa-garcia/go-playtomic-api/models"
 )
@@ -20,6 +21,8 @@ func main() {
 	timeout := flag.Duration("timeout", 30*time.Second, "HTTP request timeout")
 	telegramToken := flag.String("telegram-token", "", "Telegram bot token")
 	telegramChatID := flag.String("telegram-chat-id", "", "Telegram chat ID")
+	tournamentStatePath := flag.String("tournament-state", "tournament-state.json", "path to tournament state file")
+	classStatePath := flag.String("class-state", "class-state.json", "path to class state file")
 	flag.Parse()
 
 	// Check for subcommand
@@ -49,12 +52,24 @@ func main() {
 	defer cancel()
 
 	var sb strings.Builder
+	var notificationState *state.State
 
 	switch subcommand {
 	case "tournaments":
 		if len(cfg.Tournaments) == 0 {
 			log.Fatalf("No tournament filters configured in %s", *configPath)
 		}
+
+		// Initialize and load state
+		notificationState = state.New(*tournamentStatePath)
+		if err := notificationState.Load(); err != nil {
+			log.Fatalf("Failed to load tournament state: %v", err)
+		}
+		defer func() {
+			if err := notificationState.Save(); err != nil {
+				log.Printf("Failed to save tournament state: %v", err)
+			}
+		}()
 
 		// Create client for v2 API (tournaments)
 		v2Client := client.NewClient(
@@ -80,13 +95,31 @@ func main() {
 
 		for _, t := range matchedTournaments {
 			printTournament(t)
-			formatTournament(&sb, t)
+
+			// Check if we should notify about this tournament
+			if notificationState.ShouldNotify(t.TournamentID, t.AvailablePlaces) {
+				formatTournament(&sb, t)
+			}
+
+			// Update state with current information
+			notificationState.Update(t.TournamentID, t.AvailablePlaces)
 		}
 
 	case "classes":
 		if len(cfg.Classes) == 0 {
 			log.Fatalf("No class filters configured in %s", *configPath)
 		}
+
+		// Initialize and load state
+		notificationState = state.New(*classStatePath)
+		if err := notificationState.Load(); err != nil {
+			log.Fatalf("Failed to load class state: %v", err)
+		}
+		defer func() {
+			if err := notificationState.Save(); err != nil {
+				log.Printf("Failed to save class state: %v", err)
+			}
+		}()
 
 		// Create client for v1 API (classes)
 		v1Client := client.NewClient(
@@ -112,7 +145,20 @@ func main() {
 
 		for _, c := range matchedClasses {
 			printClass(c)
-			formatClass(&sb, c)
+
+			// Calculate available places for classes
+			availablePlaces := 0
+			if c.CourseSummary != nil {
+				availablePlaces = c.CourseSummary.MaxPlayers - len(c.RegistrationInfo.Registrations)
+			}
+
+			// Check if we should notify about this class
+			if notificationState.ShouldNotify(c.AcademyClassID, availablePlaces) {
+				formatClass(&sb, c)
+			}
+
+			// Update state with current information
+			notificationState.Update(c.AcademyClassID, availablePlaces)
 		}
 	}
 
@@ -229,10 +275,38 @@ func formatClass(sb *strings.Builder, c models.Class) {
 	}
 	fmt.Fprintf(sb, "  Type: %s\n", c.Type)
 	fmt.Fprintf(sb, "  Status: %s\n", c.Status)
-	fmt.Fprintf(sb, "  Start: %s\n", c.StartDate)
+	fmt.Fprintf(sb, "  Start: %s\n", formatBerlinTime(c.StartDate))
 	if len(c.Coaches) > 0 {
 		fmt.Fprintf(sb, "  Coach: %s\n", c.Coaches[0].Name)
 	}
 	fmt.Fprintf(sb, "  Registrations: %d\n", len(c.RegistrationInfo.Registrations))
 	sb.WriteString("\n")
+}
+
+// formatBerlinTime converts an ISO date string to Berlin timezone format
+func formatBerlinTime(dateStr string) string {
+	// Parse the ISO 8601 date string
+	t, err := time.Parse(time.RFC3339, dateStr)
+	if err != nil {
+		// If parsing fails, try without timezone info
+		t, err = time.Parse("2006-01-02T15:04:05", dateStr)
+		if err != nil {
+			// If still fails, return original string
+			return dateStr
+		}
+	}
+
+	// Load Berlin timezone
+	berlin, err := time.LoadLocation("Europe/Berlin")
+	if err != nil {
+		// Fallback to original if timezone loading fails
+		return dateStr
+	}
+
+	// Convert to Berlin time
+	berlinTime := t.In(berlin)
+
+	// Format as: Mon 16 Feb, 09:00 CET
+	// The timezone name will automatically be CET or CEST depending on DST
+	return berlinTime.Format("Mon 02 Jan, 15:04 MST")
 }
