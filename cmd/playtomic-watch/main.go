@@ -98,7 +98,10 @@ func main() {
 
 			// Check if we should notify about this tournament
 			if notificationState.ShouldNotify(t.TournamentID, t.AvailablePlaces) {
+				log.Printf("📢 Found new tournament '%s', sending notification", t.Name)
 				formatTournament(&sb, t)
+			} else {
+				log.Printf("✓ Tournament '%s' already in state, skipping notification", t.Name)
 			}
 
 			// Update state with current information
@@ -152,9 +155,18 @@ func main() {
 				availablePlaces = c.CourseSummary.MaxPlayers - len(c.RegistrationInfo.Registrations)
 			}
 
+			// Get class name for logging
+			className := "Unknown"
+			if c.CourseSummary != nil {
+				className = c.CourseSummary.Name
+			}
+
 			// Check if we should notify about this class
 			if notificationState.ShouldNotify(c.AcademyClassID, availablePlaces) {
+				log.Printf("📢 Found new class '%s', sending notification", className)
 				formatClass(&sb, c)
+			} else {
+				log.Printf("✓ Class '%s' already in state, skipping notification", className)
 			}
 
 			// Update state with current information
@@ -163,7 +175,10 @@ func main() {
 	}
 
 	if sb.Len() > 0 {
+		log.Println("📧 Sending notification with new items")
 		notify(bot, sb.String())
+	} else {
+		log.Println("ℹ️  No new items to notify about")
 	}
 }
 
