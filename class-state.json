@@ -1,26 +1,54 @@
 {
   "056e054d-03c9-4843-ab06-7e5859ad111c": {
-    "last_seen": "2026-02-16T08:48:25.378249158Z",
-    "available_places": 4
+    "last_seen": "2026-02-16T09:10:06.268494046Z",
+    "available_places": 3
   },
   "074e5d90-c17c-4aa7-8704-2a5aaf5a682c": {
-    "last_seen": "2026-02-16T08:48:25.378089338Z",
+    "last_seen": "2026-02-16T09:10:06.267787047Z",
     "available_places": 4
   },
   "0956074d-98f7-4a06-814e-1b32d35afeb1": {
-    "last_seen": "2026-02-16T08:48:25.378189416Z",
+    "last_seen": "2026-02-16T09:10:06.268454432Z",
     "available_places": 4
   },
   "139a6a58-bb9d-4496-9be4-ee2a48d0e2f0": {
-    "last_seen": "2026-02-16T08:48:25.378147578Z",
+    "last_seen": "2026-02-16T09:10:06.267808427Z",
+    "available_places": 3
+  },
+  "19f5533f-6246-41ec-973e-185966e9dd51": {
+    "last_seen": "2026-02-16T09:10:06.268835561Z",
+    "available_places": 4
+  },
+  "22fe9669-48e5-40ea-a250-cefd7f7d49cd": {
+    "last_seen": "2026-02-16T09:10:06.268709186Z",
+    "available_places": 4
+  },
+  "45dbe2ae-01de-4f1c-ac71-e7aa488abb2d": {
+    "last_seen": "2026-02-16T09:10:06.268787993Z",
+    "available_places": 4
+  },
+  "6a0ef007-75f1-4cdc-9d9b-7fdf65032c24": {
+    "last_seen": "2026-02-16T09:10:06.268553325Z",
+    "available_places": 4
+  },
+  "6f94c8f0-ad12-490c-ad0b-5f654ebf4ce5": {
+    "last_seen": "2026-02-16T09:10:06.268416501Z",
+    "available_places": 4
+  },
+  "90e0a727-c4b1-461c-9d1f-3bfc6975bfd5": {
+    "last_seen": "2026-02-16T09:10:06.268340099Z",
     "available_places": 4
   },
   "9a2f3938-a231-4724-a33d-37dcb38cd62d": {
-    "last_seen": "2026-02-16T08:48:25.378323308Z",
+    "last_seen": "2026-02-16T09:10:06.26886718Z",
     "available_places": 4
   },
   "bfd069a1-3629-4e73-8cde-11899b8ef30a": {
-    "last_seen": "2026-02-16T08:48:25.378286879Z",
+    "last_seen": "2026-02-16T09:10:06.268739462Z",
+    "available_places": 4
+  },
+  "e1d36816-cd19-4ce6-b767-82558d59b337": {
+    "last_seen": "2026-02-16T09:10:06.268639405Z",
     "available_places": 4
   }
 }
