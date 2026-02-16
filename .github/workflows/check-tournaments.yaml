@@ -14,6 +14,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Pull state files from main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout origin/main -- tournament-state.json || echo "State file doesn't exist yet"
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -39,3 +46,15 @@ jobs:
           tournaments
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+
+      - name: Commit and push state file to main
+        run: |
+          git fetch origin main:main
+          git checkout main
+          git add tournament-state.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update tournament state [skip ci]"
+            git push origin main
+          fi
