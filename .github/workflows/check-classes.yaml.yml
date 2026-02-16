@@ -49,8 +49,6 @@ jobs:
 
       - name: Commit and push state file to main
         run: |
-          git fetch origin main:main
-          git checkout main
           git add class-state.json
           if git diff --staged --quiet; then
             echo "No changes to commit"
