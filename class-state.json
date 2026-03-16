@@ -79,6 +79,10 @@
     "last_seen": "2026-02-22T15:31:48.609389503Z",
     "available_places": 1
   },
+  "68cf5974-4a70-4060-b8b8-50fa6fa44dee": {
+    "last_seen": "2026-03-16T08:05:21.359416253Z",
+    "available_places": 4
+  },
   "6a0ef007-75f1-4cdc-9d9b-7fdf65032c24": {
     "last_seen": "2026-02-22T21:48:07.967118079Z",
     "available_places": 1
@@ -124,8 +128,12 @@
     "available_places": 1
   },
   "9a2f3938-a231-4724-a33d-37dcb38cd62d": {
-    "last_seen": "2026-03-16T07:36:16.348498173Z",
+    "last_seen": "2026-03-16T08:05:21.359452107Z",
     "available_places": 1
+  },
+  "9fef98c7-f2e8-4968-b270-ce69bf09f0dd": {
+    "last_seen": "2026-03-16T08:05:21.359555723Z",
+    "available_places": 4
   },
   "a236d3bf-5cae-4694-9cc4-83f79d68d5b2": {
     "last_seen": "2026-03-13T11:04:47.832186138Z",
@@ -140,7 +148,7 @@
     "available_places": 1
   },
   "afbcc52a-7312-44c8-8bb1-aeb93786febf": {
-    "last_seen": "2026-03-16T07:36:15.653652645Z",
+    "last_seen": "2026-03-16T08:05:20.620211695Z",
     "available_places": 1
   },
   "b767cd24-2561-4444-bace-11e4704541ad": {
@@ -155,6 +163,10 @@
     "last_seen": "2026-03-05T16:09:24.991373789Z",
     "available_places": 1
   },
+  "c2a29d65-2824-4f02-81af-1fc29de05324": {
+    "last_seen": "2026-03-16T08:05:21.359621312Z",
+    "available_places": 4
+  },
   "c306ab32-a2c8-4b5b-a2ac-2af9689487f1": {
     "last_seen": "2026-02-23T17:18:26.686018147Z",
     "available_places": 4
@@ -162,6 +174,10 @@
   "c3e029c2-914e-47e3-a469-75999654a683": {
     "last_seen": "2026-02-18T16:01:32.370997766Z",
     "available_places": 1
+  },
+  "cd6b8924-be9c-4132-ae54-f074bfd8c436": {
+    "last_seen": "2026-03-16T08:05:21.359505888Z",
+    "available_places": 4
   },
   "d70f5290-73b5-48f7-99d9-34fc6bd1a371": {
     "last_seen": "2026-03-01T16:11:41.139409306Z",
