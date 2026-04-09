@@ -33,7 +33,7 @@ func main() {
 	}
 
 	subcommand := args[0]
-	if subcommand != "tournaments" && subcommand != "classes" {
+	if subcommand != "tournaments" && subcommand != "classes" && subcommand != "courts" {
 		printUsage()
 		log.Fatalf("Error: invalid subcommand '%s'", subcommand)
 	}
@@ -172,6 +172,58 @@ func main() {
 			// Update state with current information
 			notificationState.Update(c.AcademyClassID, availablePlaces)
 		}
+
+	case "courts":
+		if len(cfg.Courts) == 0 {
+			log.Fatalf("No court filters configured in %s", *configPath)
+		}
+
+		v1Client := client.NewClient(
+			client.WithTimeout(*timeout),
+			client.WithBaseURL(client.DefaultBaseUrlV1),
+		)
+
+		berlinLoc, err := time.LoadLocation("Europe/Berlin")
+		if err != nil {
+			log.Fatalf("Failed to load Europe/Berlin timezone: %v", err)
+		}
+
+		var totalMatched int
+		now := time.Now().UTC()
+
+		for _, cf := range cfg.Courts {
+			clubName := tenantName(cf.TenantID)
+			var clubMatches int
+
+			for day := 0; day <= 14; day++ {
+				date := now.AddDate(0, 0, day)
+				availability, err := fetchCourtAvailability(ctx, v1Client, cf, date)
+				if err != nil {
+					log.Printf("Error fetching courts for tenant %s on %s: %v",
+						cf.TenantID, date.Format("2006-01-02"), err)
+					continue
+				}
+
+				matched := filter.ApplyCourts(availability, cf)
+				for _, court := range matched {
+					for _, slot := range court.Slots {
+						printCourtSlot(clubName, court, slot, berlinLoc)
+						formatCourtSlot(&sb, clubName, court, slot, berlinLoc)
+						clubMatches++
+						totalMatched++
+					}
+				}
+			}
+
+			if clubMatches == 0 {
+				fmt.Printf("No available courts found for %s.\n", clubName)
+			}
+		}
+
+		if totalMatched == 0 {
+			fmt.Println("No available courts found.")
+			return
+		}
 	}
 
 	if sb.Len() > 0 {
@@ -182,11 +234,25 @@ func main() {
 	}
 }
 
+// tenantNames maps known tenant IDs to human-readable club names.
+var tenantNames = map[string]string{
+	"8b818dae-aacb-4ea3-aa7b-0e77b1149c85": "Charlotte-Mitte",
+	"9fea856e-7d1a-4cae-9831-79015318967b": "PBC"
+}
+
+func tenantName(id string) string {
+	if name, ok := tenantNames[id]; ok {
+		return name
+	}
+	return id
+}
+
 func printUsage() {
-	fmt.Println("Usage: playtomic-watch [OPTIONS] <tournaments|classes>")
+	fmt.Println("Usage: playtomic-watch [OPTIONS] <tournaments|classes|courts>")
 	fmt.Println("\nSubcommands:")
 	fmt.Println("  tournaments    Search for tournaments")
 	fmt.Println("  classes        Search for classes")
+	fmt.Println("  courts         Search for available courts")
 	fmt.Println("\nOptions:")
 	flag.PrintDefaults()
 }
@@ -280,6 +346,53 @@ func printClass(c models.Class) {
 	}
 	fmt.Printf("  Registrations: %d\n", len(c.RegistrationInfo.Registrations))
 	fmt.Println()
+}
+
+// fetchCourtAvailability queries the availability endpoint for a single day.
+// The API requires a window ≤25h, so we use prev-day 22:00 UTC to curr-day 21:59:59 UTC,
+// which maps to exactly one midnight-to-midnight window in Europe/Berlin (CET/CEST).
+func fetchCourtAvailability(ctx context.Context, c *client.Client, cf config.CourtFilter, day time.Time) ([]models.CourtAvailability, error) {
+	startMin := time.Date(day.Year(), day.Month(), day.Day()-1, 22, 0, 0, 0, time.UTC)
+	startMax := time.Date(day.Year(), day.Month(), day.Day(), 21, 59, 59, 0, time.UTC)
+
+	params := &models.SearchAvailabilityParams{
+		TenantID: cf.TenantID,
+		SportID:  cf.SportID,
+		StartMin: startMin.Format("2006-01-02T15:04:05"),
+		StartMax: startMax.Format("2006-01-02T15:04:05"),
+	}
+	return c.GetAvailability(ctx, params)
+}
+
+func printCourtSlot(clubName string, court models.CourtAvailability, slot models.Slot, loc *time.Location) {
+	t := parseSlotTime(court.StartDate, slot.StartTime, loc)
+	fmt.Printf("--- Court Available ---\n")
+	fmt.Printf("  Club:     %s\n", clubName)
+	fmt.Printf("  Court:    %s\n", court.ResourceID)
+	fmt.Printf("  Time:     %s\n", t.Format("Mon 02 Jan 2006 15:04 MST"))
+	fmt.Printf("  Duration: %d min\n", slot.Duration)
+	fmt.Printf("  Price:    %s\n", slot.Price)
+	fmt.Println()
+}
+
+func formatCourtSlot(sb *strings.Builder, clubName string, court models.CourtAvailability, slot models.Slot, loc *time.Location) {
+	t := parseSlotTime(court.StartDate, slot.StartTime, loc)
+	fmt.Fprintf(sb, "🎾 %s\n", clubName)
+	fmt.Fprintf(sb, "  Court: %s\n", court.ResourceID)
+	fmt.Fprintf(sb, "  Time: %s\n", t.Format("Mon 02 Jan 2006 15:04 MST"))
+	fmt.Fprintf(sb, "  Duration: %d min | Price: %s\n", slot.Duration, slot.Price)
+	sb.WriteString("\n")
+}
+
+// parseSlotTime combines the API date ("2006-01-02") and time ("15:04:05") strings
+// (both UTC) into a time.Time converted to the given location.
+func parseSlotTime(date, slotTime string, loc *time.Location) time.Time {
+	raw := date + "T" + slotTime + "Z"
+	t, err := time.Parse("2006-01-02T15:04:05Z", raw)
+	if err != nil {
+		return time.Time{}
+	}
+	return t.In(loc)
 }
 
 func formatClass(sb *strings.Builder, c models.Class) {

@@ -10,6 +10,7 @@ import (
 type Config struct {
 	Tournaments []TournamentFilter `yaml:"tournaments"`
 	Classes     []ClassFilter      `yaml:"classes"`
+	Courts      []CourtFilter      `yaml:"courts"`
 }
 
 type TournamentFilter struct {
@@ -34,6 +35,19 @@ type ClassFilter struct {
 	Blacklist         []string `yaml:"blacklist"`
 }
 
+// TimeWindow defines a time range of interest using HH:MM strings in UTC.
+type TimeWindow struct {
+	Start string `yaml:"start"` // e.g. "17:00"
+	End   string `yaml:"end"`   // e.g. "20:00"
+}
+
+// CourtFilter holds configuration for querying court availability.
+type CourtFilter struct {
+	TenantID    string       `yaml:"tenant_id"`
+	SportID     string       `yaml:"sport_id"`
+	TimeWindows []TimeWindow `yaml:"time_windows"`
+}
+
 func Load(path string) (*Config, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -53,8 +67,8 @@ func Load(path string) (*Config, error) {
 }
 
 func (c *Config) validate() error {
-	if len(c.Tournaments) == 0 && len(c.Classes) == 0 {
-		return fmt.Errorf("at least one tournament or class filter is required")
+	if len(c.Tournaments) == 0 && len(c.Classes) == 0 && len(c.Courts) == 0 {
+		return fmt.Errorf("at least one tournament, class, or court filter is required")
 	}
 
 	for i, t := range c.Tournaments {
@@ -66,6 +80,18 @@ func (c *Config) validate() error {
 	for i, cl := range c.Classes {
 		if cl.TenantID == "" {
 			return fmt.Errorf("classes[%d]: tenant_id is required", i)
+		}
+	}
+
+	for i, ct := range c.Courts {
+		if ct.TenantID == "" {
+			return fmt.Errorf("courts[%d]: tenant_id is required", i)
+		}
+		if ct.SportID == "" {
+			return fmt.Errorf("courts[%d]: sport_id is required", i)
+		}
+		if len(ct.TimeWindows) == 0 {
+			return fmt.Errorf("courts[%d]: at least one time_window is required", i)
 		}
 	}
 

@@ -1,0 +1,9 @@
+# Time should be in UTC
+courts:
+  - tenant_id: "8b818dae-aacb-4ea3-aa7b-0e77b1149c85"
+    sport_id: "PADEL"
+    time_windows:
+      - start: "05:00"
+        end: "05:30"
+      - start: "15:00"
+        end: "17:00"
