@@ -1,6 +1,7 @@
 package filter
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/rafa-garcia/go-playtomic-api/internal/config"
@@ -114,6 +115,74 @@ func hasPlayer(t models.Tournament, name string) bool {
 		}
 	}
 	return false
+}
+
+// ApplyCourts filters slots to those with duration == 90 minutes that fall
+// within any of the configured time windows. Returns a copy of each
+// CourtAvailability containing only the matching slots; entries with no
+// matching slots are omitted.
+func ApplyCourts(courts []models.CourtAvailability, f config.CourtFilter) []models.CourtAvailability {
+	var result []models.CourtAvailability
+	for _, c := range courts {
+		matched := matchSlots(c.Slots, f.TimeWindows)
+		if len(matched) > 0 {
+			result = append(result, models.CourtAvailability{
+				ResourceID: c.ResourceID,
+				StartDate:  c.StartDate,
+				Slots:      matched,
+			})
+		}
+	}
+	return result
+}
+
+// matchSlots returns the slots that are 90 minutes long and start within any
+// of the given UTC time windows (HH:MM format).
+func matchSlots(slots []models.Slot, windows []config.TimeWindow) []models.Slot {
+	var result []models.Slot
+	for _, s := range slots {
+		if s.Duration != 90 {
+			continue
+		}
+		if slotInAnyWindow(s.StartTime, windows) {
+			result = append(result, s)
+		}
+	}
+	return result
+}
+
+// slotInAnyWindow checks whether startTime ("HH:MM:SS") falls within any window.
+// A slot is considered inside a window when its start hour:minute is >= window
+// start and < window end.
+func slotInAnyWindow(startTime string, windows []config.TimeWindow) bool {
+	slotMins, err := parseHHMM(startTime)
+	if err != nil {
+		return false
+	}
+	for _, w := range windows {
+		wStart, err := parseHHMM(w.Start)
+		if err != nil {
+			continue
+		}
+		wEnd, err := parseHHMM(w.End)
+		if err != nil {
+			continue
+		}
+		if slotMins >= wStart && slotMins < wEnd {
+			return true
+		}
+	}
+	return false
+}
+
+// parseHHMM parses "HH:MM" or "HH:MM:SS" and returns total minutes since midnight.
+func parseHHMM(s string) (int, error) {
+	var h, m int
+	_, err := fmt.Sscanf(s, "%d:%d", &h, &m)
+	if err != nil {
+		return 0, fmt.Errorf("invalid time %q: %w", s, err)
+	}
+	return h*60 + m, nil
 }
 
 func isBlacklisted(name string, blacklist []string) bool {
