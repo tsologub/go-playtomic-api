@@ -1,0 +1,31 @@
+name: Check Courts
+
+on:
+  schedule:
+    # Run every 10 minutes
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  check-courts:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.24'
+
+      - name: Run playtomic-watch T
+        run: >
+          go run ./cmd/playtomic-watch
+          -config configs/t-courts-config.yaml
+          -telegram-token "$TELEGRAM_BOT_TOKEN"
+          -telegram-chat-id "$TELEGRAM_CHAT_ID"
+          courts
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
