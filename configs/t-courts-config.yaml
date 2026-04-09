@@ -7,3 +7,8 @@ courts:
         end: "05:30"
       - start: "15:00"
         end: "17:00"
+  - tenant_id: "9fea856e-7d1a-4cae-9831-79015318967b"
+    sport_id: "PADEL"
+    time_windows:
+      - start: "15:00"
+        end: "17:00"
