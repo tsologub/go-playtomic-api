@@ -3,6 +3,7 @@ package filter
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/rafa-garcia/go-playtomic-api/internal/config"
 	"github.com/rafa-garcia/go-playtomic-api/models"
@@ -127,6 +128,9 @@ func ApplyCourts(courts []models.CourtAvailability, f config.CourtFilter) []mode
 		if isIgnoredCourt(c.ResourceID, f.IgnoredCourtIDs) {
 			continue
 		}
+		if isIgnoredDay(c.StartDate, f.IgnoredDays) {
+			continue
+		}
 		matched := matchSlots(c.Slots, f.TimeWindows)
 		if len(matched) > 0 {
 			result = append(result, models.CourtAvailability{
@@ -142,6 +146,23 @@ func ApplyCourts(courts []models.CourtAvailability, f config.CourtFilter) []mode
 func isIgnoredCourt(resourceID string, ignoredIDs []string) bool {
 	for _, id := range ignoredIDs {
 		if resourceID == id {
+			return true
+		}
+	}
+	return false
+}
+
+func isIgnoredDay(startDate string, ignoredDays []string) bool {
+	if len(ignoredDays) == 0 {
+		return false
+	}
+	t, err := time.Parse("2006-01-02", startDate)
+	if err != nil {
+		return false
+	}
+	weekday := t.Weekday().String() // e.g. "Monday"
+	for _, d := range ignoredDays {
+		if strings.EqualFold(weekday, d) {
 			return true
 		}
 	}

@@ -47,6 +47,7 @@ type CourtFilter struct {
 	SportID         string       `yaml:"sport_id"`
 	TimeWindows     []TimeWindow `yaml:"time_windows"`
 	IgnoredCourtIDs []string     `yaml:"ignored_court_ids"`
+	IgnoredDays     []string     `yaml:"ignored_days"`
 }
 
 func Load(path string) (*Config, error) {
