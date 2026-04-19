@@ -43,9 +43,10 @@ type TimeWindow struct {
 
 // CourtFilter holds configuration for querying court availability.
 type CourtFilter struct {
-	TenantID    string       `yaml:"tenant_id"`
-	SportID     string       `yaml:"sport_id"`
-	TimeWindows []TimeWindow `yaml:"time_windows"`
+	TenantID        string       `yaml:"tenant_id"`
+	SportID         string       `yaml:"sport_id"`
+	TimeWindows     []TimeWindow `yaml:"time_windows"`
+	IgnoredCourtIDs []string     `yaml:"ignored_court_ids"`
 }
 
 func Load(path string) (*Config, error) {

@@ -124,6 +124,9 @@ func hasPlayer(t models.Tournament, name string) bool {
 func ApplyCourts(courts []models.CourtAvailability, f config.CourtFilter) []models.CourtAvailability {
 	var result []models.CourtAvailability
 	for _, c := range courts {
+		if isIgnoredCourt(c.ResourceID, f.IgnoredCourtIDs) {
+			continue
+		}
 		matched := matchSlots(c.Slots, f.TimeWindows)
 		if len(matched) > 0 {
 			result = append(result, models.CourtAvailability{
@@ -134,6 +137,15 @@ func ApplyCourts(courts []models.CourtAvailability, f config.CourtFilter) []mode
 		}
 	}
 	return result
+}
+
+func isIgnoredCourt(resourceID string, ignoredIDs []string) bool {
+	for _, id := range ignoredIDs {
+		if resourceID == id {
+			return true
+		}
+	}
+	return false
 }
 
 // matchSlots returns the slots that are 90 minutes long and start within any
