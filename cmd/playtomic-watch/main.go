@@ -238,6 +238,7 @@ func main() {
 var tenantNames = map[string]string{
 	"8b818dae-aacb-4ea3-aa7b-0e77b1149c85": "Charlotte-Mitte",
 	"9fea856e-7d1a-4cae-9831-79015318967b": "PBC",
+	"4a3497a5-f9bd-43eb-9aaa-a972a856b3d2": "PadelBros",
 }
 
 func tenantName(id string) string {
