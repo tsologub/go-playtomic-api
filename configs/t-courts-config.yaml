@@ -1,5 +1,6 @@
 # Time should be in UTC
 courts:
+  # Charlotte
   - tenant_id: "8b818dae-aacb-4ea3-aa7b-0e77b1149c85"
     sport_id: "PADEL"
     time_windows:
