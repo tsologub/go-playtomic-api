@@ -6,6 +6,15 @@ courts:
     time_windows:
       - start: "15:00"
         end: "17:00"
+  # PadelBros      
+  - tenant_id: "4a3497a5-f9bd-43eb-9aaa-a972a856b3d2"
+    sport_id: "PADEL"
+    time_windows:
+      - start: "15:30"
+        end: "16:30"
+    ignored_court_ids:
+      - "9acd1ada-e6b3-4c1e-8f0d-3ad8a5783afd"
+      - "c775028d-450b-4962-b6a9-4996beff2712"
   # - tenant_id: "9fea856e-7d1a-4cae-9831-79015318967b"
   #   sport_id: "PADEL"
   #   time_windows:
