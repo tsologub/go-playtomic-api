@@ -14,6 +14,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Pull state files from main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout origin/main -- court-state.json || echo "State file doesn't exist yet"
+
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
@@ -23,9 +30,20 @@ jobs:
         run: >
           go run ./cmd/playtomic-watch
           -config configs/t-courts-config.yaml
+          -court-state court-state.json
           -telegram-token "$TELEGRAM_BOT_TOKEN"
           -telegram-chat-id "$TELEGRAM_CHAT_ID"
           courts
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+      - name: Commit and push state file to main
+        run: |
+          git add court-state.json
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "Update court state [skip ci]"
+            git push origin main
+          fi

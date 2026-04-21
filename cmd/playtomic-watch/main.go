@@ -23,6 +23,7 @@ func main() {
 	telegramChatID := flag.String("telegram-chat-id", "", "Telegram chat ID")
 	tournamentStatePath := flag.String("tournament-state", "tournament-state.json", "path to tournament state file")
 	classStatePath := flag.String("class-state", "class-state.json", "path to class state file")
+	courtStatePath := flag.String("court-state", "court-state.json", "path to court state file")
 	flag.Parse()
 
 	// Check for subcommand
@@ -178,6 +179,16 @@ func main() {
 			log.Fatalf("No court filters configured in %s", *configPath)
 		}
 
+		courtState := state.New(*courtStatePath)
+		if err := courtState.Load(); err != nil {
+			log.Fatalf("Failed to load court state: %v", err)
+		}
+		defer func() {
+			if err := courtState.Save(); err != nil {
+				log.Printf("Failed to save court state: %v", err)
+			}
+		}()
+
 		v1Client := client.NewClient(
 			client.WithTimeout(*timeout),
 			client.WithBaseURL(client.DefaultBaseUrlV1),
@@ -208,7 +219,15 @@ func main() {
 				for _, court := range matched {
 					for _, slot := range court.Slots {
 						printCourtSlot(clubName, court, slot, berlinLoc)
-						formatCourtSlot(&sb, clubName, court, slot, berlinLoc)
+
+						slotKey := court.ResourceID + "|" + court.StartDate + "|" + slot.StartTime
+						if courtState.ShouldNotify(slotKey, 1) {
+							log.Printf("📢 New court slot %s at %s, sending notification", court.ResourceID, slot.StartTime)
+							formatCourtSlot(&sb, clubName, court, slot, berlinLoc)
+						} else {
+							log.Printf("✓ Court slot %s at %s already in state, skipping notification", court.ResourceID, slot.StartTime)
+						}
+						courtState.Update(slotKey, 1)
 						clubMatches++
 						totalMatched++
 					}
