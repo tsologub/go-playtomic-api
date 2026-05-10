@@ -5,7 +5,7 @@ courts:
     sport_id: "PADEL"
     time_windows:
       - start: "15:00"
-        end: "17:00"
+        end: "18:00"
     ignored_days:
       - "Saturday"
       - "Sunday"
