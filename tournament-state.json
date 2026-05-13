@@ -3,13 +3,25 @@
     "last_seen": "2026-04-05T08:07:48.638202179Z",
     "available_places": 1
   },
+  "03f03c78-a827-47b9-9512-a6ebd2b25b92": {
+    "last_seen": "2026-05-13T20:29:49.909512264Z",
+    "available_places": 20
+  },
+  "080fba02-ac54-4208-88a9-af5a2515692a": {
+    "last_seen": "2026-05-13T20:29:49.909551852Z",
+    "available_places": 20
+  },
   "082e1b4a-e63c-4885-bccd-cb3d761e2325": {
-    "last_seen": "2026-05-13T19:30:52.458918447Z",
+    "last_seen": "2026-05-13T20:29:49.909695213Z",
     "available_places": 7
   },
   "0c5af954-6c11-4244-b1ee-dff627b45237": {
     "last_seen": "2026-05-08T10:28:24.901504082Z",
     "available_places": 1
+  },
+  "0f3672e9-2ac5-49d1-9be1-24392e9a0eab": {
+    "last_seen": "2026-05-13T20:29:49.909561756Z",
+    "available_places": 19
   },
   "11cfaf20-e6f6-40fb-a62b-dd3a705cbe89": {
     "last_seen": "2026-04-04T04:32:30.428747122Z",
@@ -48,8 +60,12 @@
     "available_places": 1
   },
   "2c5680e9-45d9-4022-96b7-469987c660ab": {
-    "last_seen": "2026-05-13T19:30:52.458908262Z",
+    "last_seen": "2026-05-13T20:29:49.909683646Z",
     "available_places": 1
+  },
+  "2f212cd5-2ba4-41a6-8bd3-d1555798d398": {
+    "last_seen": "2026-05-13T20:29:49.909570309Z",
+    "available_places": 16
   },
   "2ff592b0-7060-4740-8e9f-233dbfdd3b38": {
     "last_seen": "2026-04-11T07:20:05.589489282Z",
@@ -76,12 +92,20 @@
     "available_places": 1
   },
   "45466320-79f0-403f-b890-59abba351429": {
-    "last_seen": "2026-05-13T19:30:52.458877295Z",
+    "last_seen": "2026-05-13T20:29:49.909659811Z",
     "available_places": 4
   },
   "46da4f25-113e-41e7-a2a6-d6f0038c4246": {
     "last_seen": "2026-04-03T10:11:55.156824092Z",
     "available_places": 4
+  },
+  "484f3eb0-6471-498f-a2c3-bd95265be8ea": {
+    "last_seen": "2026-05-13T20:29:49.909525413Z",
+    "available_places": 20
+  },
+  "4add8c04-85e3-4c32-8919-c09db938320e": {
+    "last_seen": "2026-05-13T20:29:49.909593453Z",
+    "available_places": 20
   },
   "51ef6bb9-4f5c-4940-8567-8a5194e56a86": {
     "last_seen": "2026-04-27T05:58:39.665551812Z",
@@ -90,6 +114,14 @@
   "52a6be21-0272-405b-b4f6-da6d456116c6": {
     "last_seen": "2026-04-02T21:08:03.454406698Z",
     "available_places": 1
+  },
+  "52bcca75-7344-4ec2-8c7d-c123ef8f2cfd": {
+    "last_seen": "2026-05-13T20:29:49.909535237Z",
+    "available_places": 20
+  },
+  "5fac56fa-6e50-4e8b-a7d2-f663c27c652b": {
+    "last_seen": "2026-05-13T20:29:49.909607373Z",
+    "available_places": 20
   },
   "62b4fc37-74af-430e-b8ca-9d26be101368": {
     "last_seen": "2026-04-29T04:20:04.269836173Z",
@@ -144,7 +176,7 @@
     "available_places": 3
   },
   "abb3e335-3f93-4400-bdd1-c7ac88201be4": {
-    "last_seen": "2026-05-13T19:30:52.458887751Z",
+    "last_seen": "2026-05-13T20:29:49.909671388Z",
     "available_places": 1
   },
   "adf7332d-9c34-46da-845d-d05a706af1fa": {
@@ -163,6 +195,10 @@
     "last_seen": "2026-05-10T13:28:01.420887362Z",
     "available_places": 1
   },
+  "c603b000-5c7d-4ea2-a171-6caae2e86d7f": {
+    "last_seen": "2026-05-13T20:29:49.909634433Z",
+    "available_places": 20
+  },
   "cff0a209-4dbf-498a-8e1c-6b7a6c16c427": {
     "last_seen": "2026-05-10T14:22:37.980176437Z",
     "available_places": 3
@@ -172,7 +208,7 @@
     "available_places": 1
   },
   "d53dcc11-b94d-4a36-a53c-4df9f76001a3": {
-    "last_seen": "2026-05-13T19:30:52.458866279Z",
+    "last_seen": "2026-05-13T20:29:49.909646942Z",
     "available_places": 18
   },
   "d6f3f853-dbe0-4cdc-b652-0e3566b2eb52": {
@@ -203,6 +239,10 @@
     "last_seen": "2026-05-13T19:30:52.458898056Z",
     "available_places": 1
   },
+  "e4b7ebaa-80d2-4fe5-b7a4-ff3dfea0dca2": {
+    "last_seen": "2026-05-13T20:29:49.909580374Z",
+    "available_places": 20
+  },
   "ead3e314-d5de-44fb-aa92-db9d95297d44": {
     "last_seen": "2026-04-04T04:32:30.428802116Z",
     "available_places": 18
@@ -214,5 +254,9 @@
   "fb45bfbe-8510-486c-8d34-3e9aad24c0ca": {
     "last_seen": "2026-05-10T14:22:37.980147584Z",
     "available_places": 13
+  },
+  "fcdc47a4-fc19-4c12-bc39-2d17f4007380": {
+    "last_seen": "2026-05-13T20:29:49.909620433Z",
+    "available_places": 20
   }
 }
