@@ -5,13 +5,13 @@ classes:
     status: "PENDING,IN_PROGRESS"
     type: "COURSE,PUBLIC"
     coach_names:
-      - "Anne"
-      - "Ieva"
+      - "Deniz"
       - "Kate"
       - "Gustavo"
     player_name: "Karina P"
     course_names:
       - "intensivkurs 2"
-      - "intensivkurs 1"
-      - "beginner"
       - "elementary"
+      - "intermediate"
+      - "intensivkurs 3"
+      - "leveling"
