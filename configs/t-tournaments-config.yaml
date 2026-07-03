@@ -8,7 +8,7 @@ tournaments:
     blacklist:
       - "ladies"
       - "beginner"
-      - "advanced"
+      - "Intermediate - Advanced"
       - "Community Matching"
       - "Morning Americano"
       - "Brunch"
