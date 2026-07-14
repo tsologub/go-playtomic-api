@@ -21,6 +21,20 @@ func ApplyClasses(classes []models.Class, f config.ClassFilter) []models.Class {
 }
 
 func matchClass(c models.Class, f config.ClassFilter) bool {
+	// Filter by course visibility. Previously done server-side via the
+	// course_visibility param, which the API no longer accepts.
+	if f.CourseVisibility != "" && c.CourseSummary != nil {
+		if !strings.EqualFold(c.CourseSummary.Visibility, f.CourseVisibility) {
+			return false
+		}
+	}
+
+	// Filter out full classes. Previously done server-side via the
+	// show_only_available param, which the API no longer accepts.
+	if f.ShowOnlyAvailable && !hasAvailablePlaces(c) {
+		return false
+	}
+
 	// Filter by coach name
 	if len(f.CoachNames) > 0 && !hasAnyCoach(c, f.CoachNames) {
 		return false
@@ -44,6 +58,16 @@ func matchClass(c models.Class, f config.ClassFilter) bool {
 	}
 
 	return true
+}
+
+// hasAvailablePlaces reports whether the class has at least one free place,
+// computed as MaxPlayers minus current registrations. Classes without a course
+// summary are treated as unavailable (we can't determine capacity).
+func hasAvailablePlaces(c models.Class) bool {
+	if c.CourseSummary == nil {
+		return false
+	}
+	return c.CourseSummary.MaxPlayers-len(c.RegistrationInfo.Registrations) > 0
 }
 
 func hasAnyCoach(c models.Class, names []string) bool {

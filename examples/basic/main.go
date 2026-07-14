@@ -40,14 +40,13 @@ func main() {
 func searchClasses(ctx context.Context, c *client.Client) ([]models.Class, error) {
 	// Build search parameters
 	classParams := &models.SearchClassesParams{
-		Sort:             "start_date,ASC",
-		Status:           "PENDING,IN_PROGRESS",
-		Type:             "COURSE,PUBLIC",
-		IncludeSummary:   true,
-		Size:             100,
-		Page:             0,
-		CourseVisibility: "PUBLIC",
-		FromStartDate:    time.Now().Format("2006-01-02") + "T00:00:00",
+		Sort:           "start_date,ASC",
+		Status:         "PENDING,IN_PROGRESS",
+		Type:           "COURSE,PUBLIC",
+		IncludeSummary: true,
+		Size:           50,
+		Page:           0,
+		FromStartDate:  time.Now().Format("2006-01-02") + "T00:00:00",
 	}
 
 	// Add tenant IDs if provided

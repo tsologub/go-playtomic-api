@@ -37,20 +37,22 @@ type CourseSummary struct {
 	MaxPlayers int    `json:"max_players"`
 }
 
+// MaxClassesPageSize is the maximum page size accepted by the v1/classes endpoint.
+// Requests exceeding it are rejected ("the parameter size cannot be greater than 50").
+const MaxClassesPageSize = 50
+
 // SearchClassesParams defines parameters for searching classes
 type SearchClassesParams struct {
-	Sort              string
-	Status            string
-	Type              string
-	TenantIDs         []string
-	IncludeSummary    bool
-	Size              int
-	Page              int
-	CourseVisibility  string
-	ShowOnlyAvailable bool
-	FromStartDate     string
-	Coordinate        *Coordinate
-	Radius            int
+	Sort           string
+	Status         string
+	Type           string
+	TenantIDs      []string
+	IncludeSummary bool
+	Size           int
+	Page           int
+	FromStartDate  string
+	Coordinate     *Coordinate
+	Radius         int
 }
 
 // ToURLValues converts SearchClassesParams to url.Values
@@ -77,19 +79,15 @@ func (p *SearchClassesParams) ToURLValues() url.Values {
 		values.Set("include_summary", "true")
 	}
 
-	if p.Size > 0 {
-		values.Set("size", fmt.Sprintf("%d", p.Size))
+	// The endpoint caps size at 50 and rejects larger values; clamp to the max
+	// page size, defaulting to it when unset.
+	size := p.Size
+	if size <= 0 || size > MaxClassesPageSize {
+		size = MaxClassesPageSize
 	}
+	values.Set("size", fmt.Sprintf("%d", size))
 
 	values.Set("page", fmt.Sprintf("%d", p.Page))
-
-	if cv := strings.TrimSpace(p.CourseVisibility); cv != "" {
-		values.Set("course_visibility", cv)
-	}
-
-	if p.ShowOnlyAvailable {
-		values.Set("show_only_available", "true")
-	}
 
 	if p.FromStartDate != "" {
 		values.Set("from_start_date", p.FromStartDate)

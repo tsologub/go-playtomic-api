@@ -305,12 +305,8 @@ func fetchClasses(ctx context.Context, c *client.Client, cf config.ClassFilter) 
 		TenantIDs: []string{cf.TenantID},
 	}
 
-	if cf.CourseVisibility != "" {
-		params.CourseVisibility = cf.CourseVisibility
-	}
-	if cf.ShowOnlyAvailable {
-		params.ShowOnlyAvailable = true
-	}
+	// Note: course_visibility and show_only_available are no longer accepted by
+	// the API; those filters are applied client-side in filter.ApplyClasses.
 	if cf.Status != "" {
 		params.Status = cf.Status
 	}
