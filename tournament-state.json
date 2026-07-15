@@ -1,1 +1,18 @@
-{}
+{
+  "17b40d7d-e968-45b3-a252-06db7975e051": {
+    "last_seen": "2026-07-15T07:06:20.315642592Z",
+    "available_places": 12
+  },
+  "28739253-3d5c-4450-b49c-71d1a619ae2f": {
+    "last_seen": "2026-07-15T07:06:20.315652741Z",
+    "available_places": 10
+  },
+  "bc6554f9-d67f-4976-a97d-9cc03f0370ab": {
+    "last_seen": "2026-07-15T07:06:20.315631812Z",
+    "available_places": 13
+  },
+  "faf430c1-0f2b-4bbe-a149-2265b122b9ed": {
+    "last_seen": "2026-07-15T07:06:20.315665655Z",
+    "available_places": 3
+  }
+}
