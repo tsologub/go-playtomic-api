@@ -29,6 +29,10 @@ jobs:
       # if: always() so a failure in T doesn't block K from running - they're
       # independent tenant configs, and the state commit below should still
       # happen for whichever ones succeeded.
+      # ACCESS_TOKEN falls back to env.ROTATED_ACCESS_TOKEN first: if T below
+      # refreshes it, K picks up the fresh one instead of independently
+      # hitting /v3/auth/token again for the same expired token (secrets.*
+      # is resolved once at job start, so it wouldn't see T's update).
       - name: Run playtomic-watch T
         if: always()
         run: >
@@ -41,6 +45,7 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+          ACCESS_TOKEN: ${{ env.ROTATED_ACCESS_TOKEN || secrets.ACCESS_TOKEN }}
 
       - name: Run playtomic-watch K
         if: always()
@@ -53,6 +58,17 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+          ACCESS_TOKEN: ${{ env.ROTATED_ACCESS_TOKEN || secrets.ACCESS_TOKEN }}
+
+      # Runs even if T or K failed, since the access token can still have
+      # been refreshed before some other tenant failed. Persisting it means
+      # the next scheduled run reuses it instead of hitting /v3/auth/token
+      # again.
+      - name: Persist refreshed access token
+        if: always() && env.ROTATED_ACCESS_TOKEN != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: gh secret set ACCESS_TOKEN --body "$ROTATED_ACCESS_TOKEN" --repo ${{ github.repository }}
 
       - name: Commit and push state file to main
         if: always()

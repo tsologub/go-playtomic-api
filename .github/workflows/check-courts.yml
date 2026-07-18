@@ -38,6 +38,17 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
+          ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
+
+      # Runs even if the step above failed, since the access token can still
+      # have been refreshed before some other tenant failed. Persisting it
+      # means the next scheduled run reuses it instead of hitting
+      # /v3/auth/token again.
+      - name: Persist refreshed access token
+        if: always() && env.ROTATED_ACCESS_TOKEN != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: gh secret set ACCESS_TOKEN --body "$ROTATED_ACCESS_TOKEN" --repo ${{ github.repository }}
 
       - name: Commit and push state file to main
         if: always()

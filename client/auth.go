@@ -30,16 +30,22 @@ type tokenResponse struct {
 
 // accessToken returns a valid access token, refreshing it if it's missing or
 // close to expiring.
+//
+// A token supplied via WithAccessToken (accessTokenExpiration left zero) is
+// trusted as-is with no proactive expiration check - we don't know its real
+// expiry, so it's used until a request actually fails with 401. Once this
+// client performs its own exchange, accessTokenExpiration is set to a real
+// value and checked proactively from then on.
 func (c *Client) accessTokenFor(ctx context.Context) (string, error) {
-	if c.refreshToken == "" {
-		return "", fmt.Errorf("no refresh token configured: set REFRESH_TOKEN (see client.WithRefreshToken)")
-	}
-
 	c.tokenMu.Lock()
 	defer c.tokenMu.Unlock()
 
-	if c.accessToken != "" && time.Now().Before(c.accessTokenExpiration.Add(-tokenExpirationBuffer)) {
+	if c.accessToken != "" && (c.accessTokenExpiration.IsZero() || time.Now().Before(c.accessTokenExpiration.Add(-tokenExpirationBuffer))) {
 		return c.accessToken, nil
+	}
+
+	if c.refreshToken == "" {
+		return "", fmt.Errorf("no refresh token configured: set REFRESH_TOKEN (see client.WithRefreshToken)")
 	}
 
 	if err := c.refreshAccessTokenLocked(ctx); err != nil {
@@ -49,12 +55,24 @@ func (c *Client) accessTokenFor(ctx context.Context) (string, error) {
 	return c.accessToken, nil
 }
 
+// AccessToken returns the access token currently held by the client. If this
+// client refreshed it (e.g. after a WithAccessToken-seeded token failed),
+// this will differ from the value originally configured - callers that want
+// to persist a refreshed access token across process runs (e.g. back into a
+// secret store) should read it from here once requests are done.
+func (c *Client) AccessToken() string {
+	c.tokenMu.Lock()
+	defer c.tokenMu.Unlock()
+	return c.accessToken
+}
+
 // invalidateAccessToken forces the next accessTokenFor call to fetch a fresh
 // token, used when a request unexpectedly comes back 401 mid-run.
 func (c *Client) invalidateAccessToken() {
 	c.tokenMu.Lock()
 	defer c.tokenMu.Unlock()
 	c.accessToken = ""
+	c.accessTokenExpiration = time.Time{}
 }
 
 // refreshAccessTokenLocked exchanges the refresh token for a new access

@@ -23,12 +23,23 @@ func WithAuthBaseURL(url string) Option {
 	}
 }
 
-// WithRefreshToken sets the refresh token used to obtain access tokens.
-// Required for all requests, since the Playtomic API now requires a Bearer
-// access token on every call.
+// WithRefreshToken sets the refresh token used to obtain access tokens when
+// none is cached (or the cached one fails). Required for all requests, since
+// the Playtomic API requires a Bearer access token on every call.
 func WithRefreshToken(refreshToken string) Option {
 	return func(c *Client) {
 		c.refreshToken = refreshToken
+	}
+}
+
+// WithAccessToken seeds the client with an already-obtained access token, so
+// it's used directly without an initial exchange against the refresh token.
+// It's trusted until a request fails with 401, at which point the client
+// falls back to WithRefreshToken to obtain a new one. Optional - if omitted,
+// the client exchanges the refresh token for an access token on first use.
+func WithAccessToken(accessToken string) Option {
+	return func(c *Client) {
+		c.accessToken = accessToken
 	}
 }
 

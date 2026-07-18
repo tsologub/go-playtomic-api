@@ -30,6 +30,7 @@ func run() int {
 	telegramToken := flag.String("telegram-token", "", "Telegram bot token")
 	telegramChatID := flag.String("telegram-chat-id", "", "Telegram chat ID")
 	refreshToken := flag.String("refresh-token", os.Getenv("REFRESH_TOKEN"), "Playtomic refresh token (defaults to REFRESH_TOKEN env var)")
+	accessToken := flag.String("access-token", os.Getenv("ACCESS_TOKEN"), "Playtomic access token, reused as-is until it fails (defaults to ACCESS_TOKEN env var; optional)")
 	tournamentStatePath := flag.String("tournament-state", "tournament-state.json", "path to tournament state file")
 	classStatePath := flag.String("class-state", "class-state.json", "path to class state file")
 	courtStatePath := flag.String("court-state", "court-state.json", "path to court state file")
@@ -74,6 +75,18 @@ func run() int {
 	// silently reporting success.
 	hadErrors := false
 
+	// activeClient is set to whichever client the chosen subcommand creates.
+	// The access token is meant to be reused across runs (cheaper and safer
+	// than exchanging the refresh token every time - see AccessToken doc).
+	// If this run had to refresh it, export the new one so CI can persist it
+	// back into the ACCESS_TOKEN secret for the next scheduled run.
+	var activeClient *client.Client
+	defer func() {
+		if activeClient != nil {
+			exportRotatedAccessToken(*accessToken, activeClient.AccessToken())
+		}
+	}()
+
 	switch subcommand {
 	case "tournaments":
 		if len(cfg.Tournaments) == 0 {
@@ -96,7 +109,9 @@ func run() int {
 			client.WithTimeout(*timeout),
 			client.WithBaseURL(client.DefaultBaseUrlV2),
 			client.WithRefreshToken(*refreshToken),
+			client.WithAccessToken(*accessToken),
 		)
+		activeClient = v2Client
 
 		var matchedTournaments []models.Tournament
 		for _, tf := range cfg.Tournaments {
@@ -154,7 +169,9 @@ func run() int {
 			client.WithTimeout(*timeout),
 			client.WithBaseURL(client.DefaultBaseUrlV1),
 			client.WithRefreshToken(*refreshToken),
+			client.WithAccessToken(*accessToken),
 		)
+		activeClient = v1Client
 
 		var matchedClasses []models.Class
 		for _, cf := range cfg.Classes {
@@ -222,7 +239,9 @@ func run() int {
 			client.WithTimeout(*timeout),
 			client.WithBaseURL(client.DefaultBaseUrlV1),
 			client.WithRefreshToken(*refreshToken),
+			client.WithAccessToken(*accessToken),
 		)
+		activeClient = v1Client
 
 		berlinLoc, err := time.LoadLocation("Europe/Berlin")
 		if err != nil {
@@ -291,6 +310,45 @@ func run() int {
 		return 1
 	}
 	return 0
+}
+
+// exportRotatedAccessToken makes a refreshed access token available to the
+// rest of the CI job, so a later workflow step can persist it back into the
+// ACCESS_TOKEN secret. Without this, every run that needed a refresh would
+// have to repeat that refresh on the next scheduled run too, needlessly
+// hitting /v3/auth/token far more often than necessary.
+//
+// It's a no-op outside GitHub Actions (GITHUB_ENV unset) and when the token
+// didn't actually change (the common case: the cached access token was
+// still valid and reused as-is for the whole run).
+func exportRotatedAccessToken(original, current string) {
+	if current == "" || current == original {
+		return
+	}
+
+	// Register the mask before the token can appear anywhere in the job's
+	// logs, including this program's own stdout and later steps that
+	// reference the exported value.
+	fmt.Println("::add-mask::" + current)
+
+	envFile := os.Getenv("GITHUB_ENV")
+	if envFile == "" {
+		return
+	}
+
+	f, err := os.OpenFile(envFile, os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		log.Printf("Warning: could not open GITHUB_ENV to export refreshed access token: %v", err)
+		return
+	}
+	defer f.Close()
+
+	if _, err := fmt.Fprintf(f, "ROTATED_ACCESS_TOKEN=%s\n", current); err != nil {
+		log.Printf("Warning: could not write refreshed access token to GITHUB_ENV: %v", err)
+		return
+	}
+
+	log.Println("Access token refreshed; exported via ROTATED_ACCESS_TOKEN for this job.")
 }
 
 // tenantNames maps known tenant IDs to human-readable club names.
