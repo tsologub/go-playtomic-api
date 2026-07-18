@@ -78,12 +78,15 @@ func run() int {
 	// activeClient is set to whichever client the chosen subcommand creates.
 	// The access token is meant to be reused across runs (cheaper and safer
 	// than exchanging the refresh token every time - see AccessToken doc).
-	// If this run had to refresh it, export the new one so CI can persist it
-	// back into the ACCESS_TOKEN secret for the next scheduled run.
+	// If this run had to refresh it, both the new access token and the new
+	// refresh token (the API rotates and invalidates the old one on every
+	// exchange) get exported so CI can persist them back into the
+	// ACCESS_TOKEN/REFRESH_TOKEN secrets for the next scheduled run.
 	var activeClient *client.Client
 	defer func() {
 		if activeClient != nil {
-			exportRotatedAccessToken(*accessToken, activeClient.AccessToken())
+			exportRotatedToken("ROTATED_ACCESS_TOKEN", *accessToken, activeClient.AccessToken())
+			exportRotatedToken("ROTATED_REFRESH_TOKEN", *refreshToken, activeClient.RefreshToken())
 		}
 	}()
 
@@ -312,16 +315,17 @@ func run() int {
 	return 0
 }
 
-// exportRotatedAccessToken makes a refreshed access token available to the
-// rest of the CI job, so a later workflow step can persist it back into the
-// ACCESS_TOKEN secret. Without this, every run that needed a refresh would
-// have to repeat that refresh on the next scheduled run too, needlessly
-// hitting /v3/auth/token far more often than necessary.
+// exportRotatedToken makes a token that changed during this run available to
+// the rest of the CI job (under envVarName, via GITHUB_ENV), so a later
+// workflow step can persist it back into the corresponding secret. Used for
+// both the access token and the refresh token: the API rotates and
+// invalidates both on every exchange, so whichever run performs an exchange
+// must hand the new values back to CI or the next scheduled run will fail
+// with them.
 //
 // It's a no-op outside GitHub Actions (GITHUB_ENV unset) and when the token
-// didn't actually change (the common case: the cached access token was
-// still valid and reused as-is for the whole run).
-func exportRotatedAccessToken(original, current string) {
+// didn't actually change (the common case: no exchange was needed this run).
+func exportRotatedToken(envVarName, original, current string) {
 	if current == "" || current == original {
 		return
 	}
@@ -338,17 +342,17 @@ func exportRotatedAccessToken(original, current string) {
 
 	f, err := os.OpenFile(envFile, os.O_APPEND|os.O_WRONLY, 0o644)
 	if err != nil {
-		log.Printf("Warning: could not open GITHUB_ENV to export refreshed access token: %v", err)
+		log.Printf("Warning: could not open GITHUB_ENV to export %s: %v", envVarName, err)
 		return
 	}
 	defer f.Close()
 
-	if _, err := fmt.Fprintf(f, "ROTATED_ACCESS_TOKEN=%s\n", current); err != nil {
-		log.Printf("Warning: could not write refreshed access token to GITHUB_ENV: %v", err)
+	if _, err := fmt.Fprintf(f, "%s=%s\n", envVarName, current); err != nil {
+		log.Printf("Warning: could not write %s to GITHUB_ENV: %v", envVarName, err)
 		return
 	}
 
-	log.Println("Access token refreshed; exported via ROTATED_ACCESS_TOKEN for this job.")
+	log.Printf("%s changed; exported for this job.", envVarName)
 }
 
 // tenantNames maps known tenant IDs to human-readable club names.

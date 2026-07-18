@@ -40,15 +40,22 @@ jobs:
           REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
           ACCESS_TOKEN: ${{ secrets.ACCESS_TOKEN }}
 
-      # Runs even if the step above failed, since the access token can still
-      # have been refreshed before some other tenant failed. Persisting it
-      # means the next scheduled run reuses it instead of hitting
-      # /v3/auth/token again.
-      - name: Persist refreshed access token
-        if: always() && env.ROTATED_ACCESS_TOKEN != ''
+      # Runs even if the step above failed, since a token exchange can still
+      # have happened before some other tenant failed. Both the access token
+      # and the refresh token are rotated and invalidated by the API on
+      # every exchange, so both must be persisted or the next scheduled run
+      # will fail with a stale one.
+      - name: Persist rotated tokens
+        if: always() && (env.ROTATED_ACCESS_TOKEN != '' || env.ROTATED_REFRESH_TOKEN != '')
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: gh secret set ACCESS_TOKEN --body "$ROTATED_ACCESS_TOKEN" --repo ${{ github.repository }}
+        run: |
+          if [ -n "$ROTATED_ACCESS_TOKEN" ]; then
+            gh secret set ACCESS_TOKEN --body "$ROTATED_ACCESS_TOKEN" --repo ${{ github.repository }}
+          fi
+          if [ -n "$ROTATED_REFRESH_TOKEN" ]; then
+            gh secret set REFRESH_TOKEN --body "$ROTATED_REFRESH_TOKEN" --repo ${{ github.repository }}
+          fi
 
       - name: Commit and push state file to main
         if: always()

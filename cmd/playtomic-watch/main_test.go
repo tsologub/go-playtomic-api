@@ -15,14 +15,14 @@ import (
 	"github.com/rafa-garcia/go-playtomic-api/models"
 )
 
-func TestExportRotatedAccessTokenWritesWhenChanged(t *testing.T) {
+func TestExportRotatedTokenWritesWhenChanged(t *testing.T) {
 	envFile := filepath.Join(t.TempDir(), "github_env")
 	if err := os.WriteFile(envFile, nil, 0o644); err != nil {
 		t.Fatalf("creating env file: %v", err)
 	}
 	t.Setenv("GITHUB_ENV", envFile)
 
-	exportRotatedAccessToken("stale-access-token", "refreshed-access-token")
+	exportRotatedToken("ROTATED_ACCESS_TOKEN", "stale-access-token", "refreshed-access-token")
 
 	data, err := os.ReadFile(envFile)
 	if err != nil {
@@ -33,41 +33,42 @@ func TestExportRotatedAccessTokenWritesWhenChanged(t *testing.T) {
 	}
 }
 
-func TestExportRotatedAccessTokenNoopWhenUnchanged(t *testing.T) {
+func TestExportRotatedTokenNoopWhenUnchanged(t *testing.T) {
 	envFile := filepath.Join(t.TempDir(), "github_env")
 	if err := os.WriteFile(envFile, nil, 0o644); err != nil {
 		t.Fatalf("creating env file: %v", err)
 	}
 	t.Setenv("GITHUB_ENV", envFile)
 
-	exportRotatedAccessToken("same-access-token", "same-access-token")
+	exportRotatedToken("ROTATED_ACCESS_TOKEN", "same-access-token", "same-access-token")
 
 	data, err := os.ReadFile(envFile)
 	if err != nil {
 		t.Fatalf("reading env file: %v", err)
 	}
 	if len(data) != 0 {
-		t.Errorf("expected no write when the access token is unchanged, got %q", data)
+		t.Errorf("expected no write when the token is unchanged, got %q", data)
 	}
 }
 
-func TestExportRotatedAccessTokenNoopOutsideActions(t *testing.T) {
+func TestExportRotatedTokenNoopOutsideActions(t *testing.T) {
 	t.Setenv("GITHUB_ENV", "")
 	// Must not panic or try to open an empty path.
-	exportRotatedAccessToken("stale-access-token", "refreshed-access-token")
+	exportRotatedToken("ROTATED_ACCESS_TOKEN", "stale-access-token", "refreshed-access-token")
 }
 
-// TestRefreshedAccessTokenExportEndToEnd exercises the real path this
-// feature depends on: a client is seeded with a stale access token, a
-// request fails with 401 and falls back to the refresh token, and
-// exportRotatedAccessToken picks up the resulting access token and persists
-// it to GITHUB_ENV.
-func TestRefreshedAccessTokenExportEndToEnd(t *testing.T) {
+// TestRotatedTokensExportEndToEnd exercises the real path this feature
+// depends on: a client is seeded with a stale access token, a request fails
+// with 401 and falls back to the refresh token - which the API rotates too -
+// and exportRotatedToken picks up both resulting values and persists them
+// to GITHUB_ENV under their own keys.
+func TestRotatedTokensExportEndToEnd(t *testing.T) {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/v3/auth/token", func(w http.ResponseWriter, r *http.Request) {
 		resp := map[string]string{
 			"access_token":            "refreshed-access-token",
 			"access_token_expiration": time.Now().Add(time.Hour).UTC().Format("2006-01-02T15:04:05"),
+			"refresh_token":           "rotated-refresh-token",
 		}
 		json.NewEncoder(w).Encode(resp)
 	})
@@ -85,7 +86,7 @@ func TestRefreshedAccessTokenExportEndToEnd(t *testing.T) {
 	c := client.NewClient(
 		client.WithBaseURL(server.URL),
 		client.WithAuthBaseURL(server.URL),
-		client.WithRefreshToken("refresh-token"),
+		client.WithRefreshToken("original-refresh-token"),
 		client.WithAccessToken("stale-access-token"),
 	)
 
@@ -99,7 +100,8 @@ func TestRefreshedAccessTokenExportEndToEnd(t *testing.T) {
 	}
 	t.Setenv("GITHUB_ENV", envFile)
 
-	exportRotatedAccessToken("stale-access-token", c.AccessToken())
+	exportRotatedToken("ROTATED_ACCESS_TOKEN", "stale-access-token", c.AccessToken())
+	exportRotatedToken("ROTATED_REFRESH_TOKEN", "original-refresh-token", c.RefreshToken())
 
 	data, err := os.ReadFile(envFile)
 	if err != nil {
@@ -107,5 +109,8 @@ func TestRefreshedAccessTokenExportEndToEnd(t *testing.T) {
 	}
 	if !strings.Contains(string(data), "ROTATED_ACCESS_TOKEN=refreshed-access-token\n") {
 		t.Errorf("expected the refreshed access token to be exported, got %q", data)
+	}
+	if !strings.Contains(string(data), "ROTATED_REFRESH_TOKEN=rotated-refresh-token\n") {
+		t.Errorf("expected the rotated refresh token to be exported, got %q", data)
 	}
 }

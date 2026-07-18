@@ -26,6 +26,7 @@ type tokenRequest struct {
 type tokenResponse struct {
 	AccessToken           string `json:"access_token"`
 	AccessTokenExpiration string `json:"access_token_expiration"`
+	RefreshToken          string `json:"refresh_token"`
 }
 
 // accessToken returns a valid access token, refreshing it if it's missing or
@@ -64,6 +65,19 @@ func (c *Client) AccessToken() string {
 	c.tokenMu.Lock()
 	defer c.tokenMu.Unlock()
 	return c.accessToken
+}
+
+// RefreshToken returns the refresh token currently held by the client. The
+// Playtomic API rotates the refresh token on every exchange and invalidates
+// the previous one - after this client performs an exchange, this will
+// differ from the value originally passed to WithRefreshToken. Callers that
+// want to keep a long-lived refresh token working across process runs (e.g.
+// back into a secret store) must read it from here once requests are done
+// and persist it; reusing the original value on the next run will fail.
+func (c *Client) RefreshToken() string {
+	c.tokenMu.Lock()
+	defer c.tokenMu.Unlock()
+	return c.refreshToken
 }
 
 // invalidateAccessToken forces the next accessTokenFor call to fetch a fresh
@@ -125,6 +139,13 @@ func (c *Client) refreshAccessTokenLocked(ctx context.Context) error {
 
 	c.accessToken = tr.AccessToken
 	c.accessTokenExpiration = expiration
+	if tr.RefreshToken != "" {
+		// The API rotates the refresh token on every exchange and invalidates
+		// the one we just used - keep using the new one for the rest of this
+		// process's lifetime, and let the caller (RefreshToken) read it back
+		// to persist it, or the next exchange will fail.
+		c.refreshToken = tr.RefreshToken
+	}
 
 	return nil
 }

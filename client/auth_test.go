@@ -47,6 +47,43 @@ func TestAccessTokenForFetchesAndCaches(t *testing.T) {
 	}
 }
 
+func TestAccessTokenForAdoptsRotatedRefreshToken(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var body tokenRequest
+		if err := json.NewDecoder(r.Body).Decode(&body); err != nil {
+			t.Fatalf("decoding token request: %v", err)
+		}
+		if body.RefreshToken != "original-refresh-token" {
+			t.Errorf("expected first exchange to use original-refresh-token, got %s", body.RefreshToken)
+		}
+
+		resp := tokenResponse{
+			AccessToken:           "access-1",
+			AccessTokenExpiration: time.Now().Add(time.Hour).UTC().Format(tokenExpirationLayout),
+			RefreshToken:          "rotated-refresh-token",
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(resp)
+	}))
+	defer server.Close()
+
+	c := NewClient(WithAuthBaseURL(server.URL), WithRefreshToken("original-refresh-token"))
+
+	if _, err := c.accessTokenFor(context.Background()); err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+
+	// The API rotates and invalidates the refresh token on every exchange -
+	// the client must adopt the new one for any future exchange, and expose
+	// it via RefreshToken() so the caller can persist it.
+	if c.RefreshToken() != "rotated-refresh-token" {
+		t.Errorf("expected RefreshToken() to reflect the rotated token, got %s", c.RefreshToken())
+	}
+	if c.refreshToken != "rotated-refresh-token" {
+		t.Errorf("expected internal refreshToken to be updated for future exchanges, got %s", c.refreshToken)
+	}
+}
+
 func TestAccessTokenForUsesSeededTokenWithoutExchange(t *testing.T) {
 	var tokenCalls int32
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
