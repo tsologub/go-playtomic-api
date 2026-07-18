@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"os"
 	"strings"
 	"time"
 
@@ -17,10 +18,18 @@ import (
 )
 
 func main() {
+	os.Exit(run())
+}
+
+// run contains all program logic and returns the process exit code. Using a
+// dedicated function (instead of calling os.Exit directly from main) ensures
+// deferred cleanup - like saving state files - always runs before exit.
+func run() int {
 	configPath := flag.String("config", "config.yaml", "path to configuration file")
 	timeout := flag.Duration("timeout", 30*time.Second, "HTTP request timeout")
 	telegramToken := flag.String("telegram-token", "", "Telegram bot token")
 	telegramChatID := flag.String("telegram-chat-id", "", "Telegram chat ID")
+	refreshToken := flag.String("refresh-token", os.Getenv("REFRESH_TOKEN"), "Playtomic refresh token (defaults to REFRESH_TOKEN env var)")
 	tournamentStatePath := flag.String("tournament-state", "tournament-state.json", "path to tournament state file")
 	classStatePath := flag.String("class-state", "class-state.json", "path to class state file")
 	courtStatePath := flag.String("court-state", "court-state.json", "path to court state file")
@@ -39,6 +48,10 @@ func main() {
 		log.Fatalf("Error: invalid subcommand '%s'", subcommand)
 	}
 
+	if *refreshToken == "" {
+		log.Fatalf("Error: refresh token required (set REFRESH_TOKEN env var or -refresh-token flag)")
+	}
+
 	cfg, err := config.Load(*configPath)
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
@@ -54,6 +67,24 @@ func main() {
 
 	var sb strings.Builder
 	var notificationState *state.State
+	// hadErrors tracks whether any Playtomic API call failed during this run.
+	// We keep processing the remaining tenants/configs so state updates and
+	// notifications still go out for the ones that succeeded, but the
+	// process must still exit non-zero so CI surfaces the failure instead of
+	// silently reporting success.
+	hadErrors := false
+
+	// activeClient is set to whichever client the chosen subcommand creates.
+	// The Playtomic API rotates the refresh token on every exchange, so once
+	// requests are done we export the client's current refresh token for CI
+	// to persist back into the REFRESH_TOKEN secret - this is what lets the
+	// token keep working indefinitely instead of expiring every ~2 months.
+	var activeClient *client.Client
+	defer func() {
+		if activeClient != nil {
+			exportRotatedRefreshToken(*refreshToken, activeClient.RefreshToken())
+		}
+	}()
 
 	switch subcommand {
 	case "tournaments":
@@ -76,13 +107,16 @@ func main() {
 		v2Client := client.NewClient(
 			client.WithTimeout(*timeout),
 			client.WithBaseURL(client.DefaultBaseUrlV2),
+			client.WithRefreshToken(*refreshToken),
 		)
+		activeClient = v2Client
 
 		var matchedTournaments []models.Tournament
 		for _, tf := range cfg.Tournaments {
 			tournaments, err := fetchTournaments(ctx, v2Client, tf)
 			if err != nil {
 				log.Printf("Error fetching tournaments for tenant %s: %v", tf.TenantID, err)
+				hadErrors = true
 				continue
 			}
 
@@ -91,7 +125,10 @@ func main() {
 
 		if len(matchedTournaments) == 0 {
 			fmt.Println("No matching tournaments found.")
-			return
+			if hadErrors {
+				return 1
+			}
+			return 0
 		}
 
 		for _, t := range matchedTournaments {
@@ -129,13 +166,16 @@ func main() {
 		v1Client := client.NewClient(
 			client.WithTimeout(*timeout),
 			client.WithBaseURL(client.DefaultBaseUrlV1),
+			client.WithRefreshToken(*refreshToken),
 		)
+		activeClient = v1Client
 
 		var matchedClasses []models.Class
 		for _, cf := range cfg.Classes {
 			classes, err := fetchClasses(ctx, v1Client, cf)
 			if err != nil {
 				log.Printf("Error fetching classes for tenant %s: %v", cf.TenantID, err)
+				hadErrors = true
 				continue
 			}
 
@@ -144,7 +184,10 @@ func main() {
 
 		if len(matchedClasses) == 0 {
 			fmt.Println("No matching classes found.")
-			return
+			if hadErrors {
+				return 1
+			}
+			return 0
 		}
 
 		for _, c := range matchedClasses {
@@ -192,7 +235,9 @@ func main() {
 		v1Client := client.NewClient(
 			client.WithTimeout(*timeout),
 			client.WithBaseURL(client.DefaultBaseUrlV1),
+			client.WithRefreshToken(*refreshToken),
 		)
+		activeClient = v1Client
 
 		berlinLoc, err := time.LoadLocation("Europe/Berlin")
 		if err != nil {
@@ -212,6 +257,7 @@ func main() {
 				if err != nil {
 					log.Printf("Error fetching courts for tenant %s on %s: %v",
 						cf.TenantID, date.Format("2006-01-02"), err)
+					hadErrors = true
 					continue
 				}
 
@@ -241,7 +287,10 @@ func main() {
 
 		if totalMatched == 0 {
 			fmt.Println("No available courts found.")
-			return
+			if hadErrors {
+				return 1
+			}
+			return 0
 		}
 	}
 
@@ -251,6 +300,51 @@ func main() {
 	} else {
 		log.Println("ℹ️  No new items to notify about")
 	}
+
+	if hadErrors {
+		log.Println("⚠️  Run completed with errors — see log above")
+		return 1
+	}
+	return 0
+}
+
+// exportRotatedRefreshToken makes a rotated refresh token available to the
+// rest of the CI job, so a later workflow step can persist it back into the
+// REFRESH_TOKEN secret. Without this, the refresh token we were handed would
+// keep sliding toward its original ~2-month expiration no matter how often
+// this program runs; picking up the rotated value and re-saving it as the
+// secret lets that expiration keep sliding forward instead.
+//
+// It's a no-op outside GitHub Actions (GITHUB_ENV unset) and when the token
+// didn't actually change (e.g. the run failed before any request succeeded).
+func exportRotatedRefreshToken(original, current string) {
+	if current == "" || current == original {
+		return
+	}
+
+	// Register the mask before the token can appear anywhere in the job's
+	// logs, including this program's own stdout and later steps that
+	// reference the exported value.
+	fmt.Println("::add-mask::" + current)
+
+	envFile := os.Getenv("GITHUB_ENV")
+	if envFile == "" {
+		return
+	}
+
+	f, err := os.OpenFile(envFile, os.O_APPEND|os.O_WRONLY, 0o644)
+	if err != nil {
+		log.Printf("Warning: could not open GITHUB_ENV to export rotated refresh token: %v", err)
+		return
+	}
+	defer f.Close()
+
+	if _, err := fmt.Fprintf(f, "ROTATED_REFRESH_TOKEN=%s\n", current); err != nil {
+		log.Printf("Warning: could not write rotated refresh token to GITHUB_ENV: %v", err)
+		return
+	}
+
+	log.Println("Refresh token rotated; exported via ROTATED_REFRESH_TOKEN for this job.")
 }
 
 // tenantNames maps known tenant IDs to human-readable club names.

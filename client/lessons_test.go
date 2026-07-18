@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/rafa-garcia/go-playtomic-api/models"
 )
 
 func TestGetLessons(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := newAuthTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/lessons" {
 			t.Errorf("Expected path /lessons, got %s", r.URL.Path)
 		}
@@ -63,9 +62,7 @@ func TestGetLessons(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(
-		WithBaseURL(server.URL),
-	)
+	client := newTestClient(server)
 
 	params := &models.SearchLessonsParams{
 		TenantID:             "test-tenant-id",

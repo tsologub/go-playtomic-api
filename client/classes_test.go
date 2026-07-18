@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/rafa-garcia/go-playtomic-api/models"
 )
 
 func TestGetClasses(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := newAuthTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/classes" {
 			t.Errorf("Expected path /classes, got %s", r.URL.Path)
 		}
@@ -56,9 +55,7 @@ func TestGetClasses(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(
-		WithBaseURL(server.URL),
-	)
+	client := newTestClient(server)
 
 	params := &models.SearchClassesParams{
 		TenantIDs:      []string{"test-tenant-id-1", "test-tenant-id-2"},

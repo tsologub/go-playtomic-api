@@ -21,9 +21,6 @@
 go.work
 go.work.sum
 
-# CLI binaries
-playtomic-watch
-
 # env file
 .env
 

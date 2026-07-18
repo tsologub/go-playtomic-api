@@ -20,6 +20,24 @@ A Go client library for interacting with the [Playtomic](https://playtomic.io) A
 go get github.com/rafa-garcia/go-playtomic-api
 ```
 
+## Authentication
+
+The Playtomic API requires a Bearer access token on every request. The client
+handles this for you: give it a **refresh token** and it will exchange it for
+short-lived access tokens (~1 hour) as needed, transparently re-fetching a new
+one when it's about to expire or when a request comes back `401`.
+
+You get a refresh token by signing in through the Playtomic app/site and
+capturing it from the `/v3/auth/token` response; it's long-lived (~2 months)
+but does expire, so it must be refreshed out-of-band (e.g. a `REFRESH_TOKEN`
+secret you rotate manually) - this client does not perform the initial login.
+
+```go
+c := client.NewClient(
+	client.WithRefreshToken(os.Getenv("REFRESH_TOKEN")),
+)
+```
+
 ## Quick Start
 
 ```go
@@ -29,6 +47,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"time"
 
 	"github.com/rafa-garcia/go-playtomic-api/client"
@@ -38,6 +57,7 @@ import (
 func main() {
 	// Create a client with custom options
 	c := client.NewClient(
+		client.WithRefreshToken(os.Getenv("REFRESH_TOKEN")),
 		client.WithTimeout(10 * time.Second),
 		client.WithRetries(3),
 	)
@@ -73,9 +93,15 @@ The client can be customized with various options:
 
 ```go
 client := client.NewClient(
+    // Required: refresh token used to obtain access tokens
+    client.WithRefreshToken(os.Getenv("REFRESH_TOKEN")),
+
     // Set a custom base URL (useful for testing)
-    client.WithBaseURL("https://api.playtomic.io/v1"),
-    
+    client.WithBaseURL("https://api.app.playtomic.io/v1"),
+
+    // Set a custom base URL for the token exchange endpoint (useful for testing)
+    client.WithAuthBaseURL("https://api.app.playtomic.io"),
+
     // Set HTTP client timeout
     client.WithTimeout(15 * time.Second),
     

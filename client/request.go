@@ -11,75 +11,73 @@ import (
 
 // sendRequest sends a request to the Playtomic API and decodes the response
 func (c *Client) sendRequest(ctx context.Context, method, endpoint string, queryParams string, body io.Reader, result interface{}) error {
-	reqURL := fmt.Sprintf("%s%s?%s", c.baseURL, endpoint, queryParams)
-
-	var resp *http.Response
-	var err error
-	var req *http.Request
-
-	// Create the request
-	req, err = http.NewRequestWithContext(ctx, method, reqURL, body)
+	respBody, statusCode, err := c.doAuthenticated(ctx, method, endpoint, queryParams, body, false)
 	if err != nil {
-		return fmt.Errorf("creating request: %w", err)
+		return err
 	}
 
-	// Set headers
+	if statusCode != http.StatusOK {
+		return parseAPIError(statusCode, respBody)
+	}
+
+	if err := json.Unmarshal(respBody, result); err != nil {
+		return fmt.Errorf("decoding response: %w", err)
+	}
+
+	return nil
+}
+
+// doAuthenticated attaches a Bearer access token and performs the request,
+// retrying network failures per c.maxRetries. On a 401, it invalidates the
+// cached access token and retries the whole request once with a fresh one -
+// unless this is already a retried call, in which case it returns the 401
+// as-is so the caller doesn't loop forever on a bad refresh token.
+func (c *Client) doAuthenticated(ctx context.Context, method, endpoint, queryParams string, body io.Reader, retriedAuth bool) ([]byte, int, error) {
+	token, err := c.accessTokenFor(ctx)
+	if err != nil {
+		return nil, 0, fmt.Errorf("getting access token: %w", err)
+	}
+
+	reqURL := fmt.Sprintf("%s%s?%s", c.baseURL, endpoint, queryParams)
+
+	req, err := http.NewRequestWithContext(ctx, method, reqURL, body)
+	if err != nil {
+		return nil, 0, fmt.Errorf("creating request: %w", err)
+	}
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
 	req.Header.Set("User-Agent", c.userAgent)
+	req.Header.Set("Authorization", "Bearer "+token)
 
-	// Try the request with retries
+	var resp *http.Response
 	for attempt := 0; attempt <= c.maxRetries; attempt++ {
 		resp, err = c.httpClient.Do(req)
 		if err == nil {
 			break
 		}
 
-		// If this was the last attempt, return the error
 		if attempt == c.maxRetries {
-			return fmt.Errorf("sending request after %d attempts: %w", c.maxRetries, err)
+			return nil, 0, fmt.Errorf("sending request after %d attempts: %w", c.maxRetries, err)
 		}
 
-		// Wait before retrying (could implement exponential backoff)
 		select {
 		case <-time.After(time.Duration(attempt) * 500 * time.Millisecond):
 		case <-ctx.Done():
-			return ctx.Err()
+			return nil, 0, ctx.Err()
 		}
 	}
 	defer resp.Body.Close()
 
-	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("reading response body: %w", err)
+		return nil, 0, fmt.Errorf("reading response body: %w", err)
 	}
 
-	// Handle non-200 responses
-	if resp.StatusCode != http.StatusOK {
-		var apiErr struct {
-			Error   string                 `json:"error"`
-			Details map[string]interface{} `json:"details"`
-		}
-
-		if err := json.Unmarshal(respBody, &apiErr); err == nil && apiErr.Error != "" {
-			return &APIError{
-				StatusCode: resp.StatusCode,
-				Message:    apiErr.Error,
-				Details:    apiErr.Details,
-			}
-		}
-
-		return &APIError{
-			StatusCode: resp.StatusCode,
-			Message:    "Unexpected response from API",
-		}
+	if resp.StatusCode == http.StatusUnauthorized && !retriedAuth {
+		c.invalidateAccessToken()
+		return c.doAuthenticated(ctx, method, endpoint, queryParams, body, true)
 	}
 
-	// Decode into result
-	if err := json.Unmarshal(respBody, result); err != nil {
-		return fmt.Errorf("decoding response: %w", err)
-	}
-
-	return nil
+	return respBody, resp.StatusCode, nil
 }

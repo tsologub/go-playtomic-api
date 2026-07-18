@@ -4,14 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 
 	"github.com/rafa-garcia/go-playtomic-api/models"
 )
 
 func TestGetMatches(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	server := newAuthTestServer(t, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/matches" {
 			t.Errorf("Expected path /matches, got %s", r.URL.Path)
 		}
@@ -85,9 +84,7 @@ func TestGetMatches(t *testing.T) {
 	}))
 	defer server.Close()
 
-	client := NewClient(
-		WithBaseURL(server.URL),
-	)
+	client := newTestClient(server)
 
 	params := &models.SearchMatchesParams{
 		TenantIDs:  []string{"test-tenant-id-1", "test-tenant-id-2"},

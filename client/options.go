@@ -15,6 +15,23 @@ func WithBaseURL(url string) Option {
 	}
 }
 
+// WithAuthBaseURL sets a custom base URL for the token exchange endpoint
+// (useful for testing against a mock server).
+func WithAuthBaseURL(url string) Option {
+	return func(c *Client) {
+		c.authURL = url
+	}
+}
+
+// WithRefreshToken sets the refresh token used to obtain access tokens.
+// Required for all requests, since the Playtomic API now requires a Bearer
+// access token on every call.
+func WithRefreshToken(refreshToken string) Option {
+	return func(c *Client) {
+		c.refreshToken = refreshToken
+	}
+}
+
 // WithTimeout sets the HTTP client timeout
 func WithTimeout(timeout time.Duration) Option {
 	return func(c *Client) {

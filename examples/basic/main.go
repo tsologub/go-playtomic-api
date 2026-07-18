@@ -15,6 +15,7 @@ import (
 func main() {
 	// Create a client with options
 	c := client.NewClient(
+		client.WithRefreshToken(os.Getenv("REFRESH_TOKEN")),
 		client.WithTimeout(15*time.Second),
 		client.WithRetries(2),
 		client.WithBaseURL(client.DefaultBaseUrlV2),
