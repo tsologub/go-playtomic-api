@@ -30,11 +30,8 @@ func newAuthTestServer(t *testing.T, handler http.HandlerFunc) *httptest.Server 
 		}
 
 		resp := tokenResponse{
-			AccessToken:            "test-access-token",
-			AccessTokenExpiration:  time.Now().Add(time.Hour).UTC().Format(tokenExpirationLayout),
-			RefreshToken:           body.RefreshToken,
-			RefreshTokenExpiration: time.Now().AddDate(0, 2, 0).UTC().Format(tokenExpirationLayout),
-			UserID:                 "10408183",
+			AccessToken:           "test-access-token",
+			AccessTokenExpiration: time.Now().Add(time.Hour).UTC().Format(tokenExpirationLayout),
 		}
 
 		w.Header().Set("Content-Type", "application/json")

@@ -24,11 +24,8 @@ type tokenRequest struct {
 }
 
 type tokenResponse struct {
-	AccessToken            string `json:"access_token"`
-	AccessTokenExpiration  string `json:"access_token_expiration"`
-	RefreshToken           string `json:"refresh_token"`
-	RefreshTokenExpiration string `json:"refresh_token_expiration"`
-	UserID                 string `json:"user_id"`
+	AccessToken           string `json:"access_token"`
+	AccessTokenExpiration string `json:"access_token_expiration"`
 }
 
 // accessToken returns a valid access token, refreshing it if it's missing or
@@ -50,18 +47,6 @@ func (c *Client) accessTokenFor(ctx context.Context) (string, error) {
 	}
 
 	return c.accessToken, nil
-}
-
-// RefreshToken returns the refresh token currently held by the client. The
-// Playtomic API rotates the refresh token on every exchange, so after a
-// request has been made this may differ from the value originally passed to
-// WithRefreshToken - callers that want to persist a long-lived refresh token
-// across process runs (e.g. back into a secret store) should read it from
-// here once requests are done, not from the value they configured.
-func (c *Client) RefreshToken() string {
-	c.tokenMu.Lock()
-	defer c.tokenMu.Unlock()
-	return c.refreshToken
 }
 
 // invalidateAccessToken forces the next accessTokenFor call to fetch a fresh
@@ -122,13 +107,6 @@ func (c *Client) refreshAccessTokenLocked(ctx context.Context) error {
 
 	c.accessToken = tr.AccessToken
 	c.accessTokenExpiration = expiration
-	if tr.RefreshToken != "" {
-		// The API rotates the refresh token on every exchange; keep using the
-		// latest one for the rest of this process's lifetime. The
-		// caller-supplied REFRESH_TOKEN (env var) is left untouched - it's
-		// updated manually every ~2 months per Playtomic's expiration.
-		c.refreshToken = tr.RefreshToken
-	}
 
 	return nil
 }

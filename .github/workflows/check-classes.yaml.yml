@@ -48,16 +48,6 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
 
-      # Runs even if the step above failed (e.g. one tenant errored), since
-      # the refresh token still rotates on a successful auth exchange and
-      # partial state progress from the tenants that did succeed shouldn't
-      # be lost just because the job is flagged red.
-      - name: Persist rotated refresh token
-        if: always() && env.ROTATED_REFRESH_TOKEN != ''
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: gh secret set REFRESH_TOKEN --body "$ROTATED_REFRESH_TOKEN" --repo ${{ github.repository }}
-
       - name: Commit and push state file to main
         if: always()
         run: |

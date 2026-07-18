@@ -74,18 +74,6 @@ func run() int {
 	// silently reporting success.
 	hadErrors := false
 
-	// activeClient is set to whichever client the chosen subcommand creates.
-	// The Playtomic API rotates the refresh token on every exchange, so once
-	// requests are done we export the client's current refresh token for CI
-	// to persist back into the REFRESH_TOKEN secret - this is what lets the
-	// token keep working indefinitely instead of expiring every ~2 months.
-	var activeClient *client.Client
-	defer func() {
-		if activeClient != nil {
-			exportRotatedRefreshToken(*refreshToken, activeClient.RefreshToken())
-		}
-	}()
-
 	switch subcommand {
 	case "tournaments":
 		if len(cfg.Tournaments) == 0 {
@@ -109,7 +97,6 @@ func run() int {
 			client.WithBaseURL(client.DefaultBaseUrlV2),
 			client.WithRefreshToken(*refreshToken),
 		)
-		activeClient = v2Client
 
 		var matchedTournaments []models.Tournament
 		for _, tf := range cfg.Tournaments {
@@ -168,7 +155,6 @@ func run() int {
 			client.WithBaseURL(client.DefaultBaseUrlV1),
 			client.WithRefreshToken(*refreshToken),
 		)
-		activeClient = v1Client
 
 		var matchedClasses []models.Class
 		for _, cf := range cfg.Classes {
@@ -237,7 +223,6 @@ func run() int {
 			client.WithBaseURL(client.DefaultBaseUrlV1),
 			client.WithRefreshToken(*refreshToken),
 		)
-		activeClient = v1Client
 
 		berlinLoc, err := time.LoadLocation("Europe/Berlin")
 		if err != nil {
@@ -306,45 +291,6 @@ func run() int {
 		return 1
 	}
 	return 0
-}
-
-// exportRotatedRefreshToken makes a rotated refresh token available to the
-// rest of the CI job, so a later workflow step can persist it back into the
-// REFRESH_TOKEN secret. Without this, the refresh token we were handed would
-// keep sliding toward its original ~2-month expiration no matter how often
-// this program runs; picking up the rotated value and re-saving it as the
-// secret lets that expiration keep sliding forward instead.
-//
-// It's a no-op outside GitHub Actions (GITHUB_ENV unset) and when the token
-// didn't actually change (e.g. the run failed before any request succeeded).
-func exportRotatedRefreshToken(original, current string) {
-	if current == "" || current == original {
-		return
-	}
-
-	// Register the mask before the token can appear anywhere in the job's
-	// logs, including this program's own stdout and later steps that
-	// reference the exported value.
-	fmt.Println("::add-mask::" + current)
-
-	envFile := os.Getenv("GITHUB_ENV")
-	if envFile == "" {
-		return
-	}
-
-	f, err := os.OpenFile(envFile, os.O_APPEND|os.O_WRONLY, 0o644)
-	if err != nil {
-		log.Printf("Warning: could not open GITHUB_ENV to export rotated refresh token: %v", err)
-		return
-	}
-	defer f.Close()
-
-	if _, err := fmt.Fprintf(f, "ROTATED_REFRESH_TOKEN=%s\n", current); err != nil {
-		log.Printf("Warning: could not write rotated refresh token to GITHUB_ENV: %v", err)
-		return
-	}
-
-	log.Println("Refresh token rotated; exported via ROTATED_REFRESH_TOKEN for this job.")
 }
 
 // tenantNames maps known tenant IDs to human-readable club names.

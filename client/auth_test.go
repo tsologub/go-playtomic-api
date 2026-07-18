@@ -22,7 +22,6 @@ func TestAccessTokenForFetchesAndCaches(t *testing.T) {
 		resp := tokenResponse{
 			AccessToken:           "access-1",
 			AccessTokenExpiration: time.Now().Add(time.Hour).UTC().Format(tokenExpirationLayout),
-			RefreshToken:          "rotated-refresh-token",
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)
@@ -45,11 +44,6 @@ func TestAccessTokenForFetchesAndCaches(t *testing.T) {
 	}
 	if calls := atomic.LoadInt32(&tokenCalls); calls != 1 {
 		t.Errorf("expected 1 token request, got %d", calls)
-	}
-
-	// The rotated refresh token should be adopted for subsequent exchanges.
-	if c.refreshToken != "rotated-refresh-token" {
-		t.Errorf("expected refresh token to rotate, got %s", c.refreshToken)
 	}
 }
 
@@ -98,7 +92,6 @@ func TestSendRequestRetriesOnceOn401(t *testing.T) {
 		resp := tokenResponse{
 			AccessToken:           "access-token",
 			AccessTokenExpiration: time.Now().Add(time.Hour).UTC().Format(tokenExpirationLayout),
-			RefreshToken:          "refresh-token",
 		}
 		_ = n
 		w.Header().Set("Content-Type", "application/json")
@@ -139,7 +132,6 @@ func TestSendRequestGivesUpAfterSecond401(t *testing.T) {
 		resp := tokenResponse{
 			AccessToken:           "access-token",
 			AccessTokenExpiration: time.Now().Add(time.Hour).UTC().Format(tokenExpirationLayout),
-			RefreshToken:          "refresh-token",
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(resp)

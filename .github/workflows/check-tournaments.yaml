@@ -27,8 +27,8 @@ jobs:
           go-version: '1.24'
 
       # if: always() so a failure in T doesn't block K from running - they're
-      # independent tenant configs, and the refresh token secret update /
-      # state commit below should still happen for whichever ones succeeded.
+      # independent tenant configs, and the state commit below should still
+      # happen for whichever ones succeeded.
       - name: Run playtomic-watch T
         if: always()
         run: >
@@ -53,16 +53,6 @@ jobs:
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           REFRESH_TOKEN: ${{ secrets.REFRESH_TOKEN }}
-
-      # Runs even if T or K failed (e.g. one tenant errored), since the
-      # refresh token still rotates on a successful auth exchange and
-      # partial state progress shouldn't be lost just because the job is
-      # flagged red.
-      - name: Persist rotated refresh token
-        if: always() && env.ROTATED_REFRESH_TOKEN != ''
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: gh secret set REFRESH_TOKEN --body "$ROTATED_REFRESH_TOKEN" --repo ${{ github.repository }}
 
       - name: Commit and push state file to main
         if: always()
