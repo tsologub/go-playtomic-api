@@ -10,11 +10,15 @@ type APIError struct {
 	StatusCode int
 	Message    string
 	Details    map[string]interface{}
+	RawBody    string
 }
 
 // Error implements the error interface
 func (e *APIError) Error() string {
-	return fmt.Sprintf("API error (status %d): %s", e.StatusCode, e.Message)
+	if e.RawBody == "" {
+		return fmt.Sprintf("API error (status %d): %s", e.StatusCode, e.Message)
+	}
+	return fmt.Sprintf("API error (status %d): %s (response body: %s)", e.StatusCode, e.Message, e.RawBody)
 }
 
 // parseAPIError builds an APIError from a non-2xx response body, handling
@@ -22,12 +26,14 @@ func (e *APIError) Error() string {
 // current shape used behind api.app.playtomic.io
 // ({"status": "...", "localized_message": "..."}).
 func parseAPIError(statusCode int, body []byte) *APIError {
+	rawBody := string(body)
+
 	var legacy struct {
 		Error   string                 `json:"error"`
 		Details map[string]interface{} `json:"details"`
 	}
 	if err := json.Unmarshal(body, &legacy); err == nil && legacy.Error != "" {
-		return &APIError{StatusCode: statusCode, Message: legacy.Error, Details: legacy.Details}
+		return &APIError{StatusCode: statusCode, Message: legacy.Error, Details: legacy.Details, RawBody: rawBody}
 	}
 
 	var modern struct {
@@ -43,8 +49,8 @@ func parseAPIError(statusCode int, body []byte) *APIError {
 		if modern.Status != "" {
 			details = map[string]interface{}{"status": modern.Status}
 		}
-		return &APIError{StatusCode: statusCode, Message: message, Details: details}
+		return &APIError{StatusCode: statusCode, Message: message, Details: details, RawBody: rawBody}
 	}
 
-	return &APIError{StatusCode: statusCode, Message: "Unexpected response from API"}
+	return &APIError{StatusCode: statusCode, Message: "Unexpected response from API", RawBody: rawBody}
 }
