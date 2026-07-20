@@ -6,8 +6,8 @@ classes:
     type: "COURSE,PUBLIC"
     coach_names:
       - "Gustavo"
-      - "Ieva"
+      - "Samu"
+      - "Deniz"
     player_name: "Taras S."
     course_names:
-      - "intensivkurs 3"
       - "intensivkurs 4"
