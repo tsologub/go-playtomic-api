@@ -22,21 +22,21 @@ courts:
       - "Saturday"
       - "Sunday"
   # TioTio    
-  - tenant_id: "041a4a3c-8895-465d-91d1-c22f75049770"
-    sport_id: "PADEL"
-    time_windows:
-      - start: "16:00"
-        end: "16:30"
-    ignored_days:
-      - "Saturday"
+  # - tenant_id: "041a4a3c-8895-465d-91d1-c22f75049770"
+  #   sport_id: "PADEL"
+  #   time_windows:
+  #     - start: "16:00"
+  #       end: "16:30"
+  #   ignored_days:
+  #     - "Saturday"
   # Beach Mitte
-  - tenant_id: "aa7e1831-a90d-4a4f-b6ae-f6d334179907"
-    sport_id: "PADEL"
-    time_windows:
-      - start: "16:00"
-        end: "16:30"
-    ignored_days:
-      - "Saturday"
+  # - tenant_id: "aa7e1831-a90d-4a4f-b6ae-f6d334179907"
+  #   sport_id: "PADEL"
+  #   time_windows:
+  #     - start: "16:00"
+  #       end: "16:30"
+  #   ignored_days:
+  #     - "Saturday"
   # - tenant_id: "9fea856e-7d1a-4cae-9831-79015318967b"
   #   sport_id: "PADEL"
   #   time_windows:
