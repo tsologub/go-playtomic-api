@@ -10,17 +10,17 @@ courts:
       - "Saturday"
       - "Sunday"
   # PadelBros      
-  - tenant_id: "4a3497a5-f9bd-43eb-9aaa-a972a856b3d2"
-    sport_id: "PADEL"
-    time_windows:
-      - start: "15:30"
-        end: "16:30"
-    ignored_court_ids:
-      - "9acd1ada-e6b3-4c1e-8f0d-3ad8a5783afd"
-      - "c775028d-450b-4962-b6a9-4996beff2712"
-    ignored_days:
-      - "Saturday"
-      - "Sunday"
+  # - tenant_id: "4a3497a5-f9bd-43eb-9aaa-a972a856b3d2"
+  #   sport_id: "PADEL"
+  #   time_windows:
+  #     - start: "15:30"
+  #       end: "16:30"
+  #   ignored_court_ids:
+  #     - "9acd1ada-e6b3-4c1e-8f0d-3ad8a5783afd"
+  #     - "c775028d-450b-4962-b6a9-4996beff2712"
+  #   ignored_days:
+  #     - "Saturday"
+  #     - "Sunday"
   # TioTio    
   # - tenant_id: "041a4a3c-8895-465d-91d1-c22f75049770"
   #   sport_id: "PADEL"
