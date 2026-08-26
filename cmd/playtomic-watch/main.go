@@ -34,6 +34,7 @@ func run() int {
 	tournamentStatePath := flag.String("tournament-state", "tournament-state.json", "path to tournament state file")
 	classStatePath := flag.String("class-state", "class-state.json", "path to class state file")
 	courtStatePath := flag.String("court-state", "court-state.json", "path to court state file")
+	debug := flag.Bool("debug", false, "log the full URL of every Playtomic API request")
 	flag.Parse()
 
 	// Check for subcommand
@@ -113,6 +114,7 @@ func run() int {
 			client.WithBaseURL(client.DefaultBaseUrlV2),
 			client.WithRefreshToken(*refreshToken),
 			client.WithAccessToken(*accessToken),
+			client.WithDebug(*debug),
 		)
 		activeClient = v2Client
 
@@ -173,6 +175,7 @@ func run() int {
 			client.WithBaseURL(client.DefaultBaseUrlV2),
 			client.WithRefreshToken(*refreshToken),
 			client.WithAccessToken(*accessToken),
+			client.WithDebug(*debug),
 		)
 		activeClient = v2Client
 
@@ -243,6 +246,7 @@ func run() int {
 			client.WithBaseURL(client.DefaultBaseUrlV1),
 			client.WithRefreshToken(*refreshToken),
 			client.WithAccessToken(*accessToken),
+			client.WithDebug(*debug),
 		)
 		activeClient = v1Client
 

@@ -33,6 +33,7 @@ jobs:
           -court-state court-state.json
           -telegram-token "$TELEGRAM_BOT_TOKEN"
           -telegram-chat-id "$TELEGRAM_CHAT_ID"
+          -debug
           courts
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

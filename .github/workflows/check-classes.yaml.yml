@@ -32,6 +32,7 @@ jobs:
           -config configs/t-classes-config.yaml
           -telegram-token "$TELEGRAM_BOT_TOKEN"
           -telegram-chat-id "$TELEGRAM_CHAT_ID"
+          -debug
           classes
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
@@ -45,6 +46,7 @@ jobs:
           -config configs/k-classes-config.yaml
           -telegram-token "$TELEGRAM_BOT_TOKEN"
           -telegram-chat-id 844005776
+          -debug
           classes
         env:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}

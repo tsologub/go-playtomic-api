@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 )
@@ -39,6 +40,10 @@ func (c *Client) doAuthenticated(ctx context.Context, method, endpoint, queryPar
 	}
 
 	reqURL := fmt.Sprintf("%s%s?%s", c.baseURL, endpoint, queryParams)
+
+	if c.debug {
+		log.Printf("[playtomic-api] %s %s", method, reqURL)
+	}
 
 	req, err := http.NewRequestWithContext(ctx, method, reqURL, body)
 	if err != nil {
