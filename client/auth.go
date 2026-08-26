@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 )
@@ -42,6 +43,9 @@ func (c *Client) accessTokenFor(ctx context.Context) (string, error) {
 	defer c.tokenMu.Unlock()
 
 	if c.accessToken != "" && (c.accessTokenExpiration.IsZero() || time.Now().Before(c.accessTokenExpiration.Add(-tokenExpirationBuffer))) {
+		if c.debug {
+			log.Printf("[playtomic-api] reusing cached access token")
+		}
 		return c.accessToken, nil
 	}
 
@@ -49,8 +53,16 @@ func (c *Client) accessTokenFor(ctx context.Context) (string, error) {
 		return "", fmt.Errorf("no refresh token configured: set REFRESH_TOKEN (see client.WithRefreshToken)")
 	}
 
+	if c.debug {
+		log.Printf("[playtomic-api] authenticating: exchanging refresh token for a new access token")
+	}
+
 	if err := c.refreshAccessTokenLocked(ctx); err != nil {
 		return "", err
+	}
+
+	if c.debug {
+		log.Printf("[playtomic-api] authenticated: access token obtained, expires at %s", c.accessTokenExpiration)
 	}
 
 	return c.accessToken, nil

@@ -42,7 +42,7 @@ func (c *Client) doAuthenticated(ctx context.Context, method, endpoint, queryPar
 	reqURL := fmt.Sprintf("%s%s?%s", c.baseURL, endpoint, queryParams)
 
 	if c.debug {
-		log.Printf("[playtomic-api] %s %s", method, reqURL)
+		log.Printf("[playtomic-api] authenticated, querying: %s %s", method, reqURL)
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, reqURL, body)
@@ -80,6 +80,9 @@ func (c *Client) doAuthenticated(ctx context.Context, method, endpoint, queryPar
 	}
 
 	if resp.StatusCode == http.StatusUnauthorized && !retriedAuth {
+		if c.debug {
+			log.Printf("[playtomic-api] request unauthorized (401), invalidating access token and retrying with a fresh one")
+		}
 		c.invalidateAccessToken()
 		return c.doAuthenticated(ctx, method, endpoint, queryParams, body, true)
 	}
