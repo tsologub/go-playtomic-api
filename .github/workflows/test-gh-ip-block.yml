@@ -1,0 +1,23 @@
+name: Test GH Actions IP Block
+
+# One-off diagnostic: fires a raw curl at the classes endpoint from a
+# GitHub-hosted runner to check whether Playtomic/CloudFront is blocking
+# GitHub Actions IP ranges specifically (as opposed to anything about this
+# repo's client code). Compare against the same curl run from elsewhere
+# (e.g. an EC2 instance) that is known to succeed.
+on:
+  workflow_dispatch:
+    inputs:
+      bearer_token:
+        description: 'Fresh Playtomic Bearer access token (short-lived)'
+        required: true
+
+jobs:
+  curl-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Curl classes endpoint directly
+        run: |
+          curl --location -i \
+            'https://api.app.playtomic.io/v2/classes?tenant_id=8b818dae-aacb-4ea3-aa7b-0e77b1149c85&size=50&page=0&status=PENDING%2CIN_PROGRESS&type=COURSE%2CPUBLIC' \
+            --header "Authorization: Bearer ${{ inputs.bearer_token }}"
