@@ -167,18 +167,18 @@ func run() int {
 			}
 		}()
 
-		// Create client for v1 API (classes)
-		v1Client := client.NewClient(
+		// Create client for v2 API (classes)
+		v2Client := client.NewClient(
 			client.WithTimeout(*timeout),
-			client.WithBaseURL(client.DefaultBaseUrlV1),
+			client.WithBaseURL(client.DefaultBaseUrlV2),
 			client.WithRefreshToken(*refreshToken),
 			client.WithAccessToken(*accessToken),
 		)
-		activeClient = v1Client
+		activeClient = v2Client
 
 		var matchedClasses []models.Class
 		for _, cf := range cfg.Classes {
-			classes, err := fetchClasses(ctx, v1Client, cf)
+			classes, err := fetchClasses(ctx, v2Client, cf)
 			if err != nil {
 				log.Printf("Error fetching classes for tenant %s: %v", cf.TenantID, err)
 				hadErrors = true
